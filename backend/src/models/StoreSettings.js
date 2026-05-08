@@ -22,6 +22,9 @@ const storeSettingsSchema = new mongoose.Schema({
   currencyCode:     { type: String, default: 'KES' },
   currencyLabel:    { type: String, default: 'KSh' },
   freeShippingText: { type: String, default: 'FREE SHIPPING ON ORDERS OVER KSh 5,000' },
+  locationName:     { type: String, default: '' },
+  locationAddress:  { type: String, default: '' },
+  mapEmbedUrl:      { type: String, default: '' },
   socialLinks:      { type: socialLinksSchema, default: () => ({}) },
   policyLinks:      { type: policyLinksSchema, default: () => ({}) },
 }, { timestamps: true });

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import MediaPicker from '../../components/admin/MediaPicker';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 // ─── Constants ────────────────────────────────────────────
 const PRESET_GRADIENTS = [
@@ -37,6 +38,7 @@ const CUSTOM_SECTION_TYPES = [
 
 // ─── Main ─────────────────────────────────────────────────
 export default function AdminHomepage() {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [cfg,     setCfg]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
@@ -190,10 +192,10 @@ export default function AdminHomepage() {
   const hiddenBuiltins = Object.keys(BUILTIN_SECTIONS).filter(k => !sectionOrder.includes(k));
 
   return (
-    <div style={s.shell}>
+    <div style={{ ...s.shell, ...(isMobile ? s.shellMobile : {}) }}>
 
       {/* ── SIDEBAR ── */}
-      <aside style={s.sidebar}>
+      <aside style={{ ...s.sidebar, ...(isMobile ? s.sidebarMobile : {}) }}>
         <div style={{ padding: '14px 14px 8px', borderBottom: '1px solid #d0cdc9', flexShrink: 0 }}>
           <Link to="/admin" style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', textDecoration: 'none' }}>← DASHBOARD</Link>
           <h2 style={{ fontFamily: 'Anton, sans-serif', fontSize: 18, letterSpacing: 2, marginTop: 6 }}>PAGE EDITOR</h2>
@@ -265,9 +267,9 @@ export default function AdminHomepage() {
       </aside>
 
       {/* ── EDITOR ── */}
-      <div style={s.editor}>
+      <div style={{ ...s.editor, ...(isMobile ? s.editorMobile : {}) }}>
         {/* Top bar */}
-        <div style={s.topBar}>
+        <div style={{ ...s.topBar, ...(isMobile ? s.topBarMobile : {}) }}>
           <div>
             <h1 style={{ fontFamily: 'Anton, sans-serif', fontSize: 26, letterSpacing: 2, lineHeight: 1 }}>HOMEPAGE EDITOR</h1>
             <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', marginTop: 2 }}>Changes go live when you save.</p>
@@ -282,7 +284,7 @@ export default function AdminHomepage() {
           </div>
         </div>
 
-        <div style={{ padding: '24px 28px 80px' }}>
+        <div style={{ padding: isMobile ? '16px 12px 64px' : '24px 28px 80px' }}>
 
           {/* ── HERO ── */}
           {active === 'hero' && (
@@ -697,7 +699,8 @@ function Field({ label, value, onChange, textarea }) {
 }
 
 function TwoCol({ children }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>{children}</div>;
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  return <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>{children}</div>;
 }
 
 function Toggle({ label, checked, onChange }) {
@@ -724,10 +727,11 @@ function GradientField({ label, value, onChange }) {
 
 function ImageField({ label, value, onChange, onError }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
   return (
     <div>
       <label style={s.label}>{label}</label>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, marginBottom: 6 }}>
         <input
           value={value || ''}
           onChange={e => onChange(e.target.value)}
@@ -781,12 +785,16 @@ function Preview({ children }) {
 // ─── Styles ───────────────────────────────────────────────
 const s = {
   shell:    { display: 'grid', gridTemplateColumns: '230px 1fr', minHeight: '100vh', background: '#f5f3ef' },
+  shellMobile: { display: 'flex', flexDirection: 'column' },
   sidebar:  { borderRight: '1px solid #d0cdc9', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' },
+  sidebarMobile: { position: 'relative', top: 'auto', height: 'auto', maxHeight: '46vh', borderRight: 'none', borderBottom: '1px solid #d0cdc9' },
   sideLabel:{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: '#aaa', letterSpacing: 2, padding: '10px 14px 3px', display: 'block' },
   sideBtn:  { display: 'block', width: '100%', padding: '8px 14px', fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: .5, border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', borderBottom: '1px solid #f0ede9' },
   arrowBtn: { background: 'none', border: 'none', width: 22, height: '50%', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: '#888' },
   editor:   { overflowY: 'auto' },
+  editorMobile: { overflowY: 'visible' },
   topBar:   { position: 'sticky', top: 0, zIndex: 50, background: '#f5f3ef', borderBottom: '1px solid #d0cdc9', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  topBarMobile: { padding: '12px', alignItems: 'flex-start', flexDirection: 'column' },
   saveBtn:  { fontFamily: 'Space Mono, monospace', fontSize: 11, letterSpacing: 1, padding: '11px 22px', background: '#0a0a0a', color: '#f5f3ef', border: 'none', cursor: 'pointer' },
   secBtn:   { fontFamily: 'Space Mono, monospace', fontSize: 10, letterSpacing: 1, padding: '10px 16px', background: 'transparent', color: '#0a0a0a', border: '1px solid #d0cdc9', textDecoration: 'none', cursor: 'pointer' },
   label:    { display: 'block', fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: 1.5, color: '#888', marginBottom: 6 },

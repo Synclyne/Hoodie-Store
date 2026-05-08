@@ -104,7 +104,7 @@ export default function AdminShipping() {
           </div>
           <Field label="REGIONS (comma-separated, shown to customer — e.g. Westlands, Kilimani, CBD)" value={form.regions} onChange={set('regions')} />
           <div style={s.grid2}>
-            <Field label="FREE SHIPPING OVER (KSh, leave blank to never offer free)" type="number" value={form.freeOver} onChange={set('freeOver')} min="0" />
+            <Field label="FREE SHIPPING OVER (KSh, blank uses store default 5,000)" type="number" value={form.freeOver} onChange={set('freeOver')} min="0" />
             <div style={s.grid2}>
               <Field label="MIN DAYS" type="number" value={form.minDays} onChange={set('minDays')} min="0" required />
               <Field label="MAX DAYS" type="number" value={form.maxDays} onChange={set('maxDays')} min="0" required />

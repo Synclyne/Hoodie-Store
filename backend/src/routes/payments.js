@@ -30,6 +30,8 @@ const calcPricing = async (subtotal, shippingZoneId) => {
     }
 
     shipping = zone.price;
+    const freeOver = zone.freeOver ?? 5000;
+    if (freeOver && subtotal >= freeOver) shipping = 0;
   }
 
   const total = subtotal + shipping;
@@ -213,6 +215,13 @@ pricing.total = Math.max(
 
   cart.items = [];
   await cart.save();
+
+  const populatedUser = await User.findById(order.user).select('email firstName');
+  if (populatedUser) {
+    sendOrderConfirmation(order, populatedUser.email, populatedUser.firstName).catch(err => {
+      console.error('Order confirmation email failed:', err.message);
+    });
+  }
 
   return res.status(201).json({
     orderId: order._id,

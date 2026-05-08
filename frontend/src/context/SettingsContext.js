@@ -9,6 +9,9 @@ const DEFAULT_SETTINGS = {
   currencyCode: 'KES',
   currencyLabel: 'KSh',
   freeShippingText: 'FREE SHIPPING ON ORDERS OVER KSh 5,000',
+  locationName: '',
+  locationAddress: '',
+  mapEmbedUrl: '',
   socialLinks: {
     instagram: 'https://www.instagram.com/',
     telegram: 'https://t.me/',

@@ -101,6 +101,14 @@ router.get('/featured', async (req, res) => {
 
 // ─── GET /api/products/:slug/related ─────────────
 // MUST be before /:slug
+router.get('/meta/price-range', async (req, res) => {
+  const result = await Product.aggregate([
+    { $match: { isPublished: true } },
+    { $group: { _id: null, maxPrice: { $max: '$price' } } },
+  ]);
+  res.json({ maxPrice: result[0]?.maxPrice || 10000 });
+});
+
 router.get('/:slug/related', async (req, res) => {
   const product = await Product.findOne({ slug: req.params.slug });
   if (!product) return res.status(404).json({ error: 'Product not found.' });

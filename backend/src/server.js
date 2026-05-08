@@ -22,6 +22,7 @@ const wishlistRoutes = require('./routes/wishlist');
 const stockNotifyRoutes = require('./routes/stockNotify');
 const shippingRoutes = require('./routes/shipping');
 const settingsRoutes = require('./routes/settings');
+const newsletterRoutes = require('./routes/newsletter');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -109,6 +110,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/stock-notify', stockNotifyRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

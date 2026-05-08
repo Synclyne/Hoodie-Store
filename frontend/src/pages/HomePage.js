@@ -240,7 +240,8 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
           onMouseLeave={() => { hovered.current = false; }}
           onTouchStart={() => { hovered.current = true; }}
           onTouchEnd={()   => { hovered.current = false; }}
-          style={{ display: 'flex', overflowX: 'auto', gap: 1, background: '#d0cdc9', scrollBehavior: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          onTouchCancel={() => { hovered.current = false; }}
+          style={{ display: 'flex', overflowX: 'auto', gap: 1, background: '#d0cdc9', scrollBehavior: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
         >
           <style>{`.carousel-track::-webkit-scrollbar{display:none}`}</style>
           {products.map((p, i) => (
@@ -472,15 +473,20 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
 
     if (!email) return;
 
-    setSubMsg('✓ Welcome to the family!');
-    setEmail('');
+    try {
+      await api.post('/newsletter/subscribe', { email });
+      setSubMsg('Subscription confirmed. Check your email.');
+      setEmail('');
+    } catch (err) {
+      setSubMsg(err.response?.data?.error || 'Could not subscribe right now.');
+    }
 
-    setTimeout(() => setSubMsg(''), 4000);
+    setTimeout(() => setSubMsg(''), 5000);
   };
 
   const banner = cfg.banner || DEFAULT_CONFIG.banner;
@@ -838,11 +844,14 @@ export default function HomePage() {
                 /* hide scrollbar */
                 msOverflowStyle: 'none',
                 scrollbarWidth: 'none',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-x',
               }}
               onMouseEnter={() => { cardsHoveredRef.current = true; }}
               onMouseLeave={() => { cardsHoveredRef.current = false; }}
               onTouchStart={() => { cardsHoveredRef.current = true; }}
               onTouchEnd={() => { cardsHoveredRef.current = false; }}
+              onTouchCancel={() => { cardsHoveredRef.current = false; }}
               ref={el => {
                 cardsScrollRef.current = el;
                 if (el) {
@@ -1035,6 +1044,44 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
+      {(settings.mapEmbedUrl || settings.locationName || settings.locationAddress) && (
+        <section
+          style={{
+            borderTop: '1px solid #d0cdc9',
+            background: '#f5f3ef',
+            padding: isMobile ? '28px 16px' : '40px 28px',
+          }}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 1, background: '#d0cdc9' }}>
+            <div style={{ background: '#f5f3ef', padding: isMobile ? 18 : 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', letterSpacing: 2, marginBottom: 8 }}>STORE LOCATION</p>
+              <h2 style={{ fontFamily: 'Anton, sans-serif', fontSize: isMobile ? 34 : 44, lineHeight: .95, marginBottom: 10 }}>
+                {settings.locationName || settings.storeName || 'HOODIE'}
+              </h2>
+              {settings.locationAddress && (
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#666', lineHeight: 1.8 }}>
+                  {settings.locationAddress}
+                </p>
+              )}
+            </div>
+            <div style={{ background: '#ede9e3', minHeight: isMobile ? 260 : 360 }}>
+              {settings.mapEmbedUrl ? (
+                <iframe
+                  title="Store location map"
+                  src={settings.mapEmbedUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: 'block', minHeight: isMobile ? 260 : 360 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : null}
+            </div>
+          </div>
+        </section>
+      )}
+
       <footer
         style={{
           background: '#0a0a0a',

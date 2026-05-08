@@ -11,6 +11,9 @@ const DEFAULT_SETTINGS = {
   currencyCode: 'KES',
   currencyLabel: 'KSh',
   freeShippingText: 'FREE SHIPPING ON ORDERS OVER KSh 5,000',
+  locationName: '',
+  locationAddress: '',
+  mapEmbedUrl: '',
   socialLinks: { instagram: '', telegram: '', facebook: '', x: '' },
   policyLinks: { returns: '', shipping: '', privacy: '', terms: '' },
 };
@@ -83,6 +86,14 @@ export default function AdminSettings() {
             <Field label="CURRENCY LABEL" value={settings.currencyLabel || ''} onChange={set('currencyLabel')} />
           </TwoCol>
           <Field label="FREE SHIPPING TEXT" value={settings.freeShippingText || ''} onChange={set('freeShippingText')} />
+        </Section>
+
+        <Section title="STORE LOCATION">
+          <TwoCol isMobile={isMobile}>
+            <Field label="LOCATION NAME" value={settings.locationName || ''} onChange={set('locationName')} />
+            <Field label="LOCATION ADDRESS" value={settings.locationAddress || ''} onChange={set('locationAddress')} />
+          </TwoCol>
+          <Field label="GOOGLE MAPS EMBED URL" value={settings.mapEmbedUrl || ''} onChange={set('mapEmbedUrl')} />
         </Section>
 
         <Section title="SOCIAL LINKS">

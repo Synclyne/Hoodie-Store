@@ -151,13 +151,12 @@ export default function CheckoutPage() {
 
     const baseSubtotal = pricing?.subtotal ?? subtotal;
 
-    const baseShipping =
-      pricing?.shipping ??
-      (selectedZone
-        ? selectedZone.price
-        : subtotal >= 5000
-        ? 0
-        : 500);
+    const zoneFreeOver = selectedZone ? (selectedZone.freeOver ?? 5000) : null;
+    const zoneShipping = selectedZone
+      ? (zoneFreeOver && subtotal >= zoneFreeOver ? 0 : selectedZone.price)
+      : (subtotal >= 5000 ? 0 : 500);
+
+    const baseShipping = pricing?.shipping ?? zoneShipping;
 
     const discount = couponResult?.discount || 0;
 
@@ -796,7 +795,11 @@ export default function CheckoutPage() {
                                   zoneId === zone._id ? '#f5f3ef' : '#0a0a0a',
                               }}
                             >
-                              {zone.price === 0 ? 'FREE' : fmt(zone.price)}
+                              {(() => {
+                                const freeOver = zone.freeOver ?? 5000;
+                                const effectivePrice = freeOver && subtotal >= freeOver ? 0 : zone.price;
+                                return effectivePrice === 0 ? 'FREE' : fmt(effectivePrice);
+                              })()}
                             </span>
                           </label>
                         ))}

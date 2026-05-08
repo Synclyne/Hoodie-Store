@@ -38,6 +38,7 @@ export default function ShopPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [category,    setCategory]    = useState(initCategory);
   const [gender,      setGender]      = useState(initGender);
+  const [priceCap,    setPriceCap]    = useState(10000);
   const [maxPrice,    setMaxPrice]    = useState(10000);
   const [sort,        setSort]        = useState('newest');
   const [page,        setPage]        = useState(1);
@@ -50,16 +51,25 @@ export default function ShopPage() {
         sort, page, limit: 12,
         ...(category !== 'all' && { category }),
         ...(gender   !== 'all' && { gender: gender.toLowerCase() }),
-        ...(maxPrice < 10000   && { maxPrice }),
+        ...(maxPrice < priceCap && { maxPrice }),
         ...(search             && { search }),
       };
       const res = await api.get('/products', { params });
       setProducts(res.data.products);
       setPagination(res.data.pagination);
     } finally { setLoading(false); }
-  }, [category, gender, maxPrice, sort, page, search]);
+  }, [category, gender, maxPrice, priceCap, sort, page, search]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    api.get('/products/meta/price-range')
+      .then(res => {
+        const cap = Math.max(10000, Math.ceil(Number(res.data.maxPrice || 10000) / 500) * 500);
+        setPriceCap(cap);
+        setMaxPrice(cap);
+      })
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     if (routeCategory) {
       if (GENDER_SLUGS.includes(routeCategory)) {
@@ -72,7 +82,7 @@ export default function ShopPage() {
     }
   }, [routeCategory]);
 
-  const clearFilters = () => { setCategory('all'); setGender('all'); setMaxPrice(10000); setPage(1); };
+  const clearFilters = () => { setCategory('all'); setGender('all'); setMaxPrice(priceCap); setPage(1); };
 
   const Filters = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: isMobile ? '16px 20px 32px' : '24px 20px' }}>
@@ -96,7 +106,7 @@ export default function ShopPage() {
       </div>
       <div>
         <h4 style={s.filterTitle}>MAX PRICE</h4>
-        <input type="range" min={500} max={10000} step={500} value={maxPrice}
+        <input type="range" min={500} max={priceCap} step={500} value={maxPrice}
           onChange={e => { setMaxPrice(Number(e.target.value)); setPage(1); }}
           style={{ width: '100%', accentColor: '#0a0a0a' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', marginTop: 4 }}>

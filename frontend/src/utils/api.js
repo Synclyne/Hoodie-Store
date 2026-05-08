@@ -5,6 +5,8 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const appBasePath = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+
 // Attach JWT token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('hoodie_token');
@@ -19,7 +21,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('hoodie_token');
       localStorage.removeItem('hoodie_user');
-      window.location.href = '/login';
+      window.location.href = `${appBasePath}/login`;
     }
     return Promise.reject(error);
   }

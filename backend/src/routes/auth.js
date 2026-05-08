@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator');
 const User     = require('../models/User');
 const Cart     = require('../models/Cart');
 const { protect } = require('../middleware/auth');
-const { sendOrderConfirmation, sendPasswordReset } = require('../utils/email');
+const { sendPasswordReset, sendWelcomeEmail } = require('../utils/email');
 
 // ─── Helpers ──────────────────────────────────────────────
 const signToken = (id) =>
@@ -49,6 +49,10 @@ router.post(
 
     const user = await User.create({ firstName, lastName, email, password });
     await Cart.create({ user: user._id, items: [] });
+
+    sendWelcomeEmail(user.email, user.firstName).catch(err => {
+      console.error('Welcome email failed:', err.message);
+    });
 
     sendAuthResponse(res, user, 201);
   }

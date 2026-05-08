@@ -117,6 +117,27 @@ async function sendOrderConfirmation(order, userEmail, userName) {
 }
 
 // ─── Send shipping notification ───────────────────────────
+async function sendWelcomeEmail(userEmail, userName) {
+  if (!process.env.EMAIL_USER) return;
+  const brand = await getBrand();
+
+  const content = `
+    <h2 style="font-family:monospace;font-size:13px;letter-spacing:2px;color:#888">WELCOME</h2>
+    <h3 style="font-size:22px;margin:4px 0 16px">Hi ${userName}, your account is ready.</h3>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:24px">
+      Thanks for joining ${brand.name}. You can now save your details, track orders, and check out faster.
+    </p>
+    <a href="${CLIENT_URL}/account" class="btn">VIEW ACCOUNT</a>
+  `;
+
+  await transporter.sendMail({
+    from: brand.from,
+    to: userEmail,
+    subject: `Welcome to ${brand.name} Store`,
+    html: htmlWrap(content, brand.name),
+  });
+}
+
 async function sendShippingNotification(order, userEmail, userName) {
   if (!process.env.EMAIL_USER) return;
   const brand = await getBrand();
@@ -180,8 +201,31 @@ async function sendPasswordReset(userEmail, userName, resetToken) {
   });
 }
 
+async function sendNewsletterConfirmation(userEmail) {
+  if (!process.env.EMAIL_USER) return;
+  const brand = await getBrand();
+
+  const content = `
+    <h2 style="font-family:monospace;font-size:13px;letter-spacing:2px;color:#888">NEWSLETTER CONFIRMED</h2>
+    <h3 style="font-size:22px;margin:4px 0 16px">You're on the list.</h3>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:24px">
+      We will send new drops, restocks, and store updates to this email.
+    </p>
+    <a href="${CLIENT_URL}/shop" class="btn">SHOP NOW</a>
+  `;
+
+  await transporter.sendMail({
+    from: brand.from,
+    to: userEmail,
+    subject: `${brand.name} Newsletter Confirmed`,
+    html: htmlWrap(content, brand.name),
+  });
+}
+
 module.exports = {
   sendOrderConfirmation,
+  sendWelcomeEmail,
   sendShippingNotification,
   sendPasswordReset,
+  sendNewsletterConfirmation,
 };
