@@ -93,7 +93,7 @@ export default function AdminSettings() {
             <Field label="LOCATION NAME" value={settings.locationName || ''} onChange={set('locationName')} />
             <Field label="LOCATION ADDRESS" value={settings.locationAddress || ''} onChange={set('locationAddress')} />
           </TwoCol>
-          <Field label="GOOGLE MAPS EMBED URL" value={settings.mapEmbedUrl || ''} onChange={set('mapEmbedUrl')} />
+          <Field label="GOOGLE MAPS EMBED URL OR IFRAME CODE" value={settings.mapEmbedUrl || ''} onChange={set('mapEmbedUrl')} />
         </Section>
 
         <Section title="SOCIAL LINKS">

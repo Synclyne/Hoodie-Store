@@ -186,6 +186,12 @@ const SOCIAL_ICONS = {
   X: <path d="M18.7 2h3.1l-6.8 7.8L23 22h-6.5l-5.1-6.7L5.6 22H2.5l7.3-8.4L2 2h6.7l4.6 6.1L18.7 2Zm-1.1 17.9h1.7L7.8 4H6l11.6 15.9Z" />,
 };
 
+function getMapEmbedSrc(value) {
+  if (!value) return '';
+  const match = String(value).match(/src=["']([^"']+)["']/i);
+  return match ? match[1] : value;
+}
+
 function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollRef, isMobile }) {
   const innerRef = scrollRef || React.useRef(null);
   const rafRef   = React.useRef(null);
@@ -503,6 +509,7 @@ export default function HomePage() {
   }]);
   const activeHero = heroSlides[heroIndex] || heroSlides[0];
   const heroCtaColor = activeHero?.imageUrl && !activeHero?.darkText ? '#f5f3ef' : '#0a0a0a';
+  const mapEmbedSrc = getMapEmbedSrc(settings.mapEmbedUrl);
   const loopedCards = cfg.featuredCards?.length > 1 ? [...cfg.featuredCards, ...cfg.featuredCards] : (cfg.featuredCards || []);
   const socialLinks = [
     { platform: 'Instagram', href: settings.socialLinks?.instagram, icon: SOCIAL_ICONS.Instagram },
@@ -1044,7 +1051,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
-      {(settings.mapEmbedUrl || settings.locationName || settings.locationAddress) && (
+      {(mapEmbedSrc || settings.locationName || settings.locationAddress) && (
         <section
           style={{
             borderTop: '1px solid #d0cdc9',
@@ -1065,10 +1072,10 @@ export default function HomePage() {
               )}
             </div>
             <div style={{ background: '#ede9e3', minHeight: isMobile ? 260 : 360 }}>
-              {settings.mapEmbedUrl ? (
+              {mapEmbedSrc ? (
                 <iframe
                   title="Store location map"
-                  src={settings.mapEmbedUrl}
+                  src={mapEmbedSrc}
                   width="100%"
                   height="100%"
                   style={{ border: 0, display: 'block', minHeight: isMobile ? 260 : 360 }}
