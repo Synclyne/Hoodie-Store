@@ -192,10 +192,19 @@ function getMapEmbedSrc(value) {
   return match ? match[1] : value;
 }
 
+function advanceCarousel(el, speed, carryRef) {
+  carryRef.current += speed;
+  const pixels = Math.floor(carryRef.current);
+  if (pixels < 1) return;
+  carryRef.current -= pixels;
+  el.scrollLeft += pixels;
+}
+
 function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollRef, isMobile }) {
   const innerRef = scrollRef || React.useRef(null);
   const rafRef   = React.useRef(null);
   const hovered  = React.useRef(false);
+  const carryRef = React.useRef(0);
   const CARD_W   = isMobile ? 180 : 281;
 
   // Smooth RAF auto-scroll — runs continuously, pauses on hover
@@ -206,7 +215,7 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
     const tick = () => {
       const el = innerRef.current;
       if (el && !hovered.current) {
-        el.scrollLeft += speed;
+        advanceCarousel(el, speed, carryRef);
         if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft = 0;
       }
       rafRef.current = requestAnimationFrame(tick);
@@ -553,11 +562,12 @@ export default function HomePage() {
 
     const speed = isMobile ? 0.65 : 0.85;
     let rafId;
+    const carryRef = { current: 0 };
 
     const tick = () => {
       const el = cardsScrollRef.current;
       if (el && !cardsHoveredRef.current) {
-        el.scrollLeft += speed;
+        advanceCarousel(el, speed, carryRef);
         if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft = 0;
       }
       rafId = requestAnimationFrame(tick);
