@@ -14,6 +14,14 @@ const style = document.createElement('style');
 
 style.innerHTML = `
 @media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 768px) {
 
   /* Navbar */
   .desktop-links { display: none !important; }

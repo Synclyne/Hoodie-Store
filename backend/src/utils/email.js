@@ -172,6 +172,31 @@ async function sendShippingNotification(order, userEmail, userName) {
 }
 
 // ─── Send password reset ──────────────────────────────────
+async function sendDeliveryNotification(order, userEmail, userName) {
+  if (!process.env.EMAIL_USER) return;
+  const brand = await getBrand();
+
+  const content = `
+    <h2 style="font-family:monospace;font-size:13px;letter-spacing:2px;color:#888">ORDER DELIVERED</h2>
+    <h3 style="font-size:22px;margin:4px 0 20px">Hi ${userName}, your order has been delivered.</h3>
+    <p class="label">ORDER</p>
+    <p style="font-family:monospace;font-size:16px;font-weight:bold;margin:4px 0 20px">#${order.orderNumber}</p>
+
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:24px">
+      Thanks for shopping with us. If anything is not right with your order, reply to this email and we will help.
+    </p>
+
+    <a href="${CLIENT_URL}/account/orders" class="btn">VIEW ORDER</a>
+  `;
+
+  await transporter.sendMail({
+    from: brand.from,
+    to: userEmail,
+    subject: `Order Delivered #${order.orderNumber} - ${brand.name} Store`,
+    html: htmlWrap(content, brand.name),
+  });
+}
+
 async function sendPasswordReset(userEmail, userName, resetToken) {
   if (!process.env.EMAIL_USER) return;
   const brand = await getBrand();
@@ -226,6 +251,7 @@ module.exports = {
   sendOrderConfirmation,
   sendWelcomeEmail,
   sendShippingNotification,
+  sendDeliveryNotification,
   sendPasswordReset,
   sendNewsletterConfirmation,
 };

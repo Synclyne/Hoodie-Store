@@ -8,7 +8,7 @@ const Cart    = require('../models/Cart');
 const MediaAsset = require('../models/MediaAsset');
 const { protect, adminOnly, requirePermission, requireAnyPermission, ownerOnly, isOwnerAdmin } = require('../middleware/auth');
 const { upload }             = require('../utils/cloudinary');
-const { sendShippingNotification } = require('../utils/email');
+const { sendShippingNotification, sendDeliveryNotification } = require('../utils/email');
 
 router.use(protect, adminOnly);
 
@@ -175,6 +175,12 @@ router.put('/orders/:id', requirePermission('orders'), async (req, res) => {
   if (updates.status === 'shipped' && order.user?.email) {
     sendShippingNotification(order, order.user.email, order.user.firstName).catch(err => {
       console.error('Shipping email failed:', err.message);
+    });
+  }
+
+  if (updates.status === 'delivered' && order.user?.email) {
+    sendDeliveryNotification(order, order.user.email, order.user.firstName).catch(err => {
+      console.error('Delivery email failed:', err.message);
     });
   }
 
