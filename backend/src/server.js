@@ -24,6 +24,7 @@ const shippingRoutes = require('./routes/shipping');
 const settingsRoutes = require('./routes/settings');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ─── Connect Database ─────────────────────────────
 connectDB().then(() => ensureAdmin().catch(err => {
