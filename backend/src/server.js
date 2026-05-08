@@ -6,6 +6,7 @@ const cors        = require('cors');
 const morgan      = require('morgan');
 const rateLimit   = require('express-rate-limit');
 const connectDB   = require('./utils/db');
+const ensureAdmin  = require('./utils/ensureAdmin');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 // Route imports
@@ -25,7 +26,9 @@ const settingsRoutes = require('./routes/settings');
 const app = express();
 
 // ─── Connect Database ─────────────────────────────
-connectDB();
+connectDB().then(() => ensureAdmin().catch(err => {
+  console.error(`Admin bootstrap failed: ${err.message}`);
+}));
 
 // ─── Security Middleware ──────────────────────────
 app.use(helmet());
