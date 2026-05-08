@@ -26,6 +26,16 @@ const settingsRoutes = require('./routes/settings');
 const app = express();
 app.set('trust proxy', 1);
 
+const getClientOrigin = () => {
+  try {
+    return new URL(process.env.CLIENT_URL || 'http://localhost:3000').origin;
+  } catch {
+    return process.env.CLIENT_URL || 'http://localhost:3000';
+  }
+};
+
+const clientOrigin = getClientOrigin();
+
 // ─── Connect Database ─────────────────────────────
 connectDB().then(() => ensureAdmin().catch(err => {
   console.error(`Admin bootstrap failed: ${err.message}`);
@@ -34,7 +44,7 @@ connectDB().then(() => ensureAdmin().catch(err => {
 // ─── Security Middleware ──────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: clientOrigin,
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -42,7 +52,7 @@ app.use(cors({
 
 // Explicitly handle preflight OPTIONS for all routes
 app.options('*', cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: clientOrigin,
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
