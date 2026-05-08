@@ -927,6 +927,44 @@ export default function HomePage() {
 
       <TrendingSection isMobile={isMobile} />
 
+      {(mapEmbedSrc || settings.locationName || settings.locationAddress) && (
+        <section
+          style={{
+            borderTop: '1px solid #d0cdc9',
+            background: '#f5f3ef',
+            padding: isMobile ? '28px 16px' : '40px 28px',
+          }}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 1, background: '#d0cdc9' }}>
+            <div style={{ background: '#f5f3ef', padding: isMobile ? 18 : 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', letterSpacing: 2, marginBottom: 8 }}>STORE LOCATION</p>
+              <h2 style={{ fontFamily: 'Anton, sans-serif', fontSize: isMobile ? 34 : 44, lineHeight: .95, marginBottom: 10 }}>
+                {settings.locationName || settings.storeName || 'HOODIE'}
+              </h2>
+              {settings.locationAddress && (
+                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#666', lineHeight: 1.8 }}>
+                  {settings.locationAddress}
+                </p>
+              )}
+            </div>
+            <div style={{ background: '#ede9e3', minHeight: isMobile ? 260 : 360 }}>
+              {mapEmbedSrc ? (
+                <iframe
+                  title="Store location map"
+                  src={mapEmbedSrc}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: 'block', minHeight: isMobile ? 260 : 360 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : null}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── NEWSLETTER ── */}
       <section
         style={{
@@ -1049,45 +1087,6 @@ export default function HomePage() {
           </form>
         )}
       </section>
-
-      {/* ── FOOTER ── */}
-      {(mapEmbedSrc || settings.locationName || settings.locationAddress) && (
-        <section
-          style={{
-            borderTop: '1px solid #d0cdc9',
-            background: '#f5f3ef',
-            padding: isMobile ? '28px 16px' : '40px 28px',
-          }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: 1, background: '#d0cdc9' }}>
-            <div style={{ background: '#f5f3ef', padding: isMobile ? 18 : 24, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', letterSpacing: 2, marginBottom: 8 }}>STORE LOCATION</p>
-              <h2 style={{ fontFamily: 'Anton, sans-serif', fontSize: isMobile ? 34 : 44, lineHeight: .95, marginBottom: 10 }}>
-                {settings.locationName || settings.storeName || 'HOODIE'}
-              </h2>
-              {settings.locationAddress && (
-                <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#666', lineHeight: 1.8 }}>
-                  {settings.locationAddress}
-                </p>
-              )}
-            </div>
-            <div style={{ background: '#ede9e3', minHeight: isMobile ? 260 : 360 }}>
-              {mapEmbedSrc ? (
-                <iframe
-                  title="Store location map"
-                  src={mapEmbedSrc}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, display: 'block', minHeight: isMobile ? 260 : 360 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              ) : null}
-            </div>
-          </div>
-        </section>
-      )}
 
       <footer
         style={{
