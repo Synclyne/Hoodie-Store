@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { useAuth } from '../../context/AuthContext';
@@ -59,6 +59,7 @@ export default function AdminDashboard() {
     { to: '/admin/homepage', label: 'HOMEPAGE EDITOR', permission: 'homepage' },
     { to: '/admin/coupons',  label: 'COUPONS', permission: 'coupons' },
     { to: '/admin/shipping', label: 'SHIPPING', permission: 'shipping' },
+    { to: '/admin/support',  label: 'SUPPORT', permission: 'support' },
     { to: '/admin/settings', label: 'SETTINGS', permission: 'settings' },
     { to: '/admin/staff',    label: 'STAFF', permission: 'staff' },
     { to: '/',               label: 'STORE ↗',  ghost: true },

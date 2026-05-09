@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 import MediaPicker from '../../components/admin/MediaPicker';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -205,9 +205,12 @@ export default function AdminHomepage() {
 
           {/* Fixed sections */}
           <p style={s.sideLabel}>FIXED (always shown)</p>
-          {['hero', 'featured'].map(key => (
+          {['site', 'hero', 'featured'].map(key => (
             <button key={key} onClick={() => setActive(key)} style={{ ...s.sideBtn, background: active === key ? '#0a0a0a' : 'transparent', color: active === key ? '#f5f3ef' : '#0a0a0a' }}>
+              {key === 'site' && 'Site Background'}
+              <span style={{ display: key === 'site' ? 'none' : 'inline' }}>
               {key === 'hero' ? '🏠 Hero' : '⭐ Featured Products'}
+              </span>
             </button>
           ))}
 
@@ -490,6 +493,48 @@ export default function AdminHomepage() {
                 <div style={{ textAlign: 'center', padding: '28px 20px' }}>
                   <h2 style={{ fontFamily: 'Anton, sans-serif', fontSize: 56, lineHeight: .9, marginBottom: 8 }}>{cfg.collectionTitle}</h2>
                   <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#888', maxWidth: 360, margin: '0 auto' }}>{cfg.collectionSubtext}</p>
+                </div>
+              </Preview>
+            </Card>
+          )}
+
+          {active === 'site' && (
+            <Card title="SITE BACKGROUND" hint="Applies behind the storefront. Use either a flat color, an image, or both.">
+              <TwoCol>
+                <div>
+                  <label style={s.label}>BACKGROUND COLOR</label>
+                  <input
+                    type="color"
+                    value={cfg.siteBackgroundColor || '#f5f3ef'}
+                    onChange={e => set('siteBackgroundColor')(e.target.value)}
+                    style={{ ...s.input, height: 42, padding: 4 }}
+                  />
+                  <input
+                    value={cfg.siteBackgroundColor || '#f5f3ef'}
+                    onChange={e => set('siteBackgroundColor')(e.target.value)}
+                    style={{ ...s.input, marginTop: 6, fontSize: 9 }}
+                    placeholder="#f5f3ef"
+                  />
+                </div>
+                <ImageField label="BACKGROUND IMAGE" value={cfg.siteBackgroundImage || ''} onChange={val => set('siteBackgroundImage')(val)} onError={setError} />
+              </TwoCol>
+              <Preview>
+                <div
+                  style={{
+                    minHeight: 140,
+                    border: '1px solid #d0cdc9',
+                    backgroundColor: cfg.siteBackgroundColor || '#f5f3ef',
+                    backgroundImage: cfg.siteBackgroundImage ? `url("${cfg.siteBackgroundImage}")` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div style={{ background: 'rgba(245,243,239,.92)', border: '1px solid #d0cdc9', padding: '14px 18px', fontFamily: 'Space Mono, monospace', fontSize: 10 }}>
+                    Storefront background preview
+                  </div>
                 </div>
               </Preview>
             </Card>

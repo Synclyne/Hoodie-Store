@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import useMediaQuery from '../hooks/useMediaQuery';
 

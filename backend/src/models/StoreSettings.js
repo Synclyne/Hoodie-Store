@@ -21,6 +21,7 @@ const storeSettingsSchema = new mongoose.Schema({
   whatsappNumber:   { type: String, default: '254700000000' },
   currencyCode:     { type: String, default: 'KES' },
   currencyLabel:    { type: String, default: 'KSh' },
+  freeShippingVisible: { type: Boolean, default: true },
   freeShippingText: { type: String, default: 'FREE SHIPPING ON ORDERS OVER KSh 5,000' },
   locationName:     { type: String, default: '' },
   locationAddress:  { type: String, default: '' },

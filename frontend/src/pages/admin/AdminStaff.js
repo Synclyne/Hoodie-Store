@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ const PERMISSION_LABELS = {
   shipping: 'Shipping',
   coupons: 'Coupons',
   settings: 'Settings',
+  support: 'Support',
   staff: 'Staff',
 };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../next/ReactRouterCompat';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import useMediaQuery from '../hooks/useMediaQuery';

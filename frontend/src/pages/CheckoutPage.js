@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -42,9 +42,6 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [shippingZones, setShippingZones] = useState([]);
   const [zoneId, setZoneId] = useState('');
-
-  const shipping = subtotal >= 5000 ? 0 : 500;
-  const total = subtotal + shipping;
 
   useEffect(() => {
     fetchCart();
@@ -154,7 +151,7 @@ export default function CheckoutPage() {
     const zoneFreeOver = selectedZone ? (selectedZone.freeOver ?? 5000) : null;
     const zoneShipping = selectedZone
       ? (zoneFreeOver && subtotal >= zoneFreeOver ? 0 : selectedZone.price)
-      : (subtotal >= 5000 ? 0 : 500);
+      : 0;
 
     const baseShipping = pricing?.shipping ?? zoneShipping;
 
@@ -184,6 +181,12 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
+      if (shippingZones.length > 0 && !zoneId) {
+        setError('Please select a delivery zone.');
+        setProcessing(false);
+        return;
+      }
+
       const res = await api.post('/payments/initiate', {
         shippingAddress: address,
         customerNote: note,
@@ -222,6 +225,12 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
+      if (shippingZones.length > 0 && !zoneId) {
+        setError('Please select a delivery zone.');
+        setProcessing(false);
+        return;
+      }
+
       const res = await api.post('/payments/initiate', {
         shippingAddress: address,
         customerNote: note,
@@ -728,7 +737,7 @@ export default function CheckoutPage() {
 
                   {shippingZones.length > 0 && (
                     <div>
-                      <label style={s.label}>DELIVERY ZONE</label>
+                      <label style={s.label}>DELIVERY ZONE REQUIRED</label>
 
                       <div
                         style={{

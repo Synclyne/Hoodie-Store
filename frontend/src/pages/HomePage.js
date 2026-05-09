@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
+import { HomeSkeleton } from '../components/Skeleton';
 
 const DEFAULT_CONFIG = {
+  siteBackgroundColor: '#f5f3ef',
+  siteBackgroundImage: '',
   announcementText: 'FREE SHIPPING ON ORDERS OVER KSh 5,000 ✦ NEW COLLECTION NOW LIVE',
   announcementVisible: true,
   heroTagline: 'THE BEST HOODIES ARE ONLY HERE',
@@ -253,10 +256,10 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
           ref={innerRef}
           onMouseEnter={() => { hovered.current = true; }}
           onMouseLeave={() => { hovered.current = false; }}
-          onTouchStart={() => { hovered.current = true; }}
-          onTouchEnd={()   => { hovered.current = false; }}
-          onTouchCancel={() => { hovered.current = false; }}
-          style={{ display: 'flex', overflowX: 'auto', gap: 1, background: '#d0cdc9', scrollBehavior: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
+          onTouchStart={isMobile ? undefined : () => { hovered.current = true; }}
+          onTouchEnd={isMobile ? undefined : () => { hovered.current = false; }}
+          onTouchCancel={isMobile ? undefined : () => { hovered.current = false; }}
+          style={{ display: 'flex', overflowX: 'auto', gap: 1, background: '#d0cdc9', scrollBehavior: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'auto' }}
         >
           <style>{`.carousel-track::-webkit-scrollbar{display:none}`}</style>
           {products.map((p, i) => (
@@ -473,19 +476,29 @@ export default function HomePage() {
   const [email,   setEmail]   = useState('');
   const [subMsg,  setSubMsg]  = useState('');
   const [heroIndex, setHeroIndex] = useState(0);
+  const [loadingHome, setLoadingHome] = useState(true);
 
   useEffect(() => {
-    api
-      .get('/homepage')
-      .then((res) =>
-        setCfg({ ...DEFAULT_CONFIG, ...res.data.config })
-      )
-      .catch(() => {});
+    let alive = true;
 
-    api
-      .get('/products/featured')
-      .then((res) => setFeatured(res.data.products))
-      .catch(() => {});
+    Promise.allSettled([
+      api.get('/homepage'),
+      api.get('/products/featured'),
+    ]).then(([homepageResult, featuredResult]) => {
+      if (!alive) return;
+
+      if (homepageResult.status === 'fulfilled') {
+        setCfg({ ...DEFAULT_CONFIG, ...homepageResult.value.data.config });
+      }
+      if (featuredResult.status === 'fulfilled') {
+        setFeatured(featuredResult.value.data.products || []);
+      }
+      setLoadingHome(false);
+    });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const handleSubscribe = async (e) => {
@@ -520,6 +533,20 @@ export default function HomePage() {
   const heroCtaColor = activeHero?.imageUrl && !activeHero?.darkText ? '#f5f3ef' : '#0a0a0a';
   const mapEmbedSrc = getMapEmbedSrc(settings.mapEmbedUrl);
   const loopedCards = cfg.featuredCards?.length > 1 ? [...cfg.featuredCards, ...cfg.featuredCards] : (cfg.featuredCards || []);
+  const siteBackgroundColor = cfg.siteBackgroundColor || DEFAULT_CONFIG.siteBackgroundColor;
+  const siteBackgroundImage = cfg.siteBackgroundImage || '';
+  const siteBackgroundStyle = {
+    backgroundColor: siteBackgroundColor,
+    ...(siteBackgroundImage
+      ? {
+          backgroundImage: `url("${siteBackgroundImage}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+        }
+      : {}),
+  };
   const socialLinks = [
     { platform: 'Instagram', href: settings.socialLinks?.instagram, icon: SOCIAL_ICONS.Instagram },
     { platform: 'Telegram', href: settings.socialLinks?.telegram, icon: SOCIAL_ICONS.Telegram },
@@ -620,8 +647,10 @@ export default function HomePage() {
     </div>
   );
 
+  if (loadingHome) return <HomeSkeleton />;
+
   return (
-    <main style={{ background: '#f5f3ef' }}>
+    <main style={siteBackgroundStyle}>
       <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
       {/* ── ANNOUNCEMENT ── */}
       {cfg.announcementVisible && (
@@ -647,7 +676,7 @@ export default function HomePage() {
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
-          paddingTop: isMobile ? 28 : 40,
+          paddingTop: isMobile ? 28 : 22,
         }}
       >
         <p
@@ -669,12 +698,12 @@ export default function HomePage() {
             fontFamily: 'Anton, sans-serif',
             fontSize: isMobile
               ? 'clamp(72px,22vw,120px)'
-              : 'clamp(100px,20vw,180px)',
+              : 124,
             lineHeight: 0.85,
-            letterSpacing: -2,
+            letterSpacing: 0,
             position: 'relative',
             zIndex: 2,
-            marginBottom: isMobile ? 16 : 24,
+            marginBottom: isMobile ? 16 : 10,
             padding: '0 16px',
           }}
         >
@@ -688,8 +717,8 @@ export default function HomePage() {
           }}
           onMouseEnter={() => { heroPausedRef.current = true; }}
           onMouseLeave={() => { pauseHeroAuto(4000); }}
-          onTouchStart={(e) => { heroPointerRef.current = e.touches[0].clientX; heroDraggedRef.current = false; heroPausedRef.current = true; }}
-          onTouchEnd={(e) => {
+          onTouchStart={isMobile ? undefined : (e) => { heroPointerRef.current = e.touches[0].clientX; heroDraggedRef.current = false; heroPausedRef.current = true; }}
+          onTouchEnd={isMobile ? undefined : (e) => {
             if (heroPointerRef.current == null) return;
             const delta = e.changedTouches[0].clientX - heroPointerRef.current;
             if (Math.abs(delta) > 40) {
@@ -715,11 +744,12 @@ export default function HomePage() {
           style={{
             position: 'relative',
             width: '100%',
-            maxWidth: isMobile ? '100%' : 820,
+            maxWidth: isMobile ? '100%' : 760,
             margin: '0 auto',
-            height: isMobile ? 280 : 460,
+            height: isMobile ? 280 : 320,
             overflow: 'hidden',
             cursor: heroSlides.length > 1 ? 'grab' : 'default',
+            touchAction: 'pan-y',
           }}
         >
           {heroSlides.length > 1 ? (
@@ -747,13 +777,13 @@ export default function HomePage() {
                     position: 'absolute',
                     top: 0,
                     left: '50%',
-                    width: isMobile ? '88%' : '72%',
+                    width: isMobile ? '88%' : '66%',
                     height: '100%',
                     padding: 0,
                     border: 'none',
                     background: 'transparent',
                     overflow: 'hidden',
-                    transform: `translateX(calc(-50% + ${offset * (isMobile ? 54 : 70)}%)) scale(${offset === 0 ? 1 : 0.94})`,
+                    transform: `translateX(calc(-50% + ${offset * (isMobile ? 54 : 62)}%)) scale(${offset === 0 ? 1 : 0.94})`,
                     opacity: visible ? (offset === 0 ? 1 : 0.78) : 0,
                     zIndex: offset === 0 ? 2 : 1,
                     pointerEvents: visible ? 'auto' : 'none',
@@ -779,7 +809,7 @@ export default function HomePage() {
           <div
             style={{
               position: 'absolute',
-              bottom: isMobile ? 16 : 48,
+              bottom: isMobile ? 16 : 28,
               left: isMobile ? 16 : 32,
               zIndex: 4,
               textAlign: 'left',
@@ -862,13 +892,13 @@ export default function HomePage() {
                 msOverflowStyle: 'none',
                 scrollbarWidth: 'none',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x',
+                touchAction: 'auto',
               }}
               onMouseEnter={() => { cardsHoveredRef.current = true; }}
               onMouseLeave={() => { cardsHoveredRef.current = false; }}
-              onTouchStart={() => { cardsHoveredRef.current = true; }}
-              onTouchEnd={() => { cardsHoveredRef.current = false; }}
-              onTouchCancel={() => { cardsHoveredRef.current = false; }}
+              onTouchStart={isMobile ? undefined : () => { cardsHoveredRef.current = true; }}
+              onTouchEnd={isMobile ? undefined : () => { cardsHoveredRef.current = false; }}
+              onTouchCancel={isMobile ? undefined : () => { cardsHoveredRef.current = false; }}
               ref={el => {
                 cardsScrollRef.current = el;
                 if (el) {
@@ -920,7 +950,7 @@ export default function HomePage() {
                 <div style={{ minHeight: b.imageUrlRight ? 0 : (isMobile ? 180 : 420), background: b.imageUrlRight ? '#ede9e3' : b.bgRight, position: 'relative', overflow: 'hidden' }}>
                   {b.imageUrlRight && <img src={b.imageUrlRight} alt={b.heading} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                 </div>
-                <div style={{ background: '#f5f3ef', padding: isMobile ? '28px 20px' : '40px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <div style={{ gridColumn: '1 / -1', background: siteBackgroundColor, padding: isMobile ? '28px 20px' : '40px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, color: '#888', lineHeight: 1.8, marginBottom: 24, maxWidth: 280 }}>{b.subheading}</p>
                   <Link to={b.ctaLink} style={{ display: 'inline-block', fontFamily: 'Space Mono, monospace', fontSize: isMobile ? 9 : 10, letterSpacing: 2, padding: isMobile ? '10px 18px' : '12px 24px', border: '1px solid #0a0a0a', color: '#0a0a0a', textDecoration: 'none' }}>{b.ctaLabel}</Link>
                 </div>
@@ -1150,9 +1180,12 @@ export default function HomePage() {
               color: '#555',
               lineHeight: 1.8,
               textAlign: isMobile ? 'center' : 'right',
+              minWidth: isMobile ? 'auto' : 180,
             }}
           >
-            {settings.freeShippingText || 'FREE SHIPPING OVER KSH 5,000'}
+            {settings.freeShippingVisible !== false
+              ? (settings.freeShippingText || 'FREE SHIPPING OVER KSH 5,000')
+              : 'SECURE CHECKOUT'}
           </p>
         </div>
 
@@ -1173,10 +1206,13 @@ export default function HomePage() {
             { label: 'WOMEN', cat: 'women' },
             { label: 'HOODIES', cat: 'hoodie' },
             { label: 'SHOES', cat: 'shoes' },
+            { label: 'SUPPORT', to: '/support' },
+            { label: 'PRIVACY', to: settings.policyLinks?.privacy || '/privacy-policy' },
+            { label: 'TERMS', to: settings.policyLinks?.terms || '/terms-and-conditions' },
           ].map((l) => (
             <Link
-              key={l.cat}
-              to={`/shop/${l.cat}`}
+              key={l.cat || l.label}
+              to={l.to || `/shop/${l.cat}`}
               style={{
                 fontFamily: 'Space Mono, monospace',
                 fontSize: 9,

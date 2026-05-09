@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../next/ReactRouterCompat';
 import { useCart } from '../context/CartContext';
 import useMediaQuery from '../hooks/useMediaQuery';
 
@@ -10,9 +10,7 @@ export default function CartDrawer() {
   const navigate  = useNavigate();
   const isMobile  = useMediaQuery('(max-width: 768px)');
 
-  const shipping  = subtotal >= 5000 ? 0 : 500;
- 
-  const total     = subtotal + shipping;
+  const total     = subtotal;
   const itemCount = cart.items?.reduce((s, i) => s + i.quantity, 0) || 0;
 
   // On mobile: slide up from bottom. On desktop: slide in from right.
@@ -75,17 +73,20 @@ export default function CartDrawer() {
         {cart.items?.length > 0 && (
           <div style={s.footer}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-              {[['Subtotal', fmt(subtotal)], ['Shipping', shipping === 0 ? 'FREE' : fmt(shipping)]].map(([l, v]) => (
+              {[['Subtotal', fmt(subtotal)], ['Shipping', 'Selected at checkout']].map(([l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono, monospace', fontSize: 10 }}>
                   <span style={{ color: '#888' }}>{l}</span>
-                  <span style={{ color: v === 'FREE' ? '#2a7a2a' : undefined }}>{v}</span>
+                  <span>{v}</span>
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #d0cdc9', paddingTop: 10, marginBottom: 14 }}>
-              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700 }}>TOTAL</span>
+              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fontWeight: 700 }}>ITEM TOTAL</span>
               <span style={{ fontFamily: 'Anton, sans-serif', fontSize: 24 }}>{fmt(total)}</span>
             </div>
+            <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#2a7a2a', background: 'rgba(42,122,42,.08)', border: '1px solid rgba(42,122,42,.2)', padding: '7px 10px', marginBottom: 12, lineHeight: 1.6 }}>
+              Free shipping threshold: {fmt(5000)}. Final shipping is based on your delivery zone.
+            </p>
             {subtotal < 5000 && (
               <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#2a7a2a', background: 'rgba(42,122,42,.08)', border: '1px solid rgba(42,122,42,.2)', padding: '7px 10px', marginBottom: 12 }}>
                 ✦ Add {fmt(5000 - subtotal)} more for free shipping

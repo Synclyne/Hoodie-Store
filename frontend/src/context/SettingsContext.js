@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS = {
   whatsappNumber: '254700000000',
   currencyCode: 'KES',
   currencyLabel: 'KSh',
+  freeShippingVisible: true,
   freeShippingText: 'FREE SHIPPING ON ORDERS OVER KSh 5,000',
   locationName: '',
   locationAddress: '',
@@ -18,10 +19,22 @@ const DEFAULT_SETTINGS = {
     facebook: 'https://www.facebook.com/',
     x: 'https://x.com/',
   },
-  policyLinks: {},
+  policyLinks: {
+    privacy: '/privacy-policy',
+    terms: '/terms-and-conditions',
+    returns: '',
+    shipping: '',
+  },
 };
 
 const SettingsContext = createContext({ settings: DEFAULT_SETTINGS, loading: true });
+
+const mergeSettings = (settings = {}) => ({
+  ...DEFAULT_SETTINGS,
+  ...settings,
+  socialLinks: { ...DEFAULT_SETTINGS.socialLinks, ...(settings.socialLinks || {}) },
+  policyLinks: { ...DEFAULT_SETTINGS.policyLinks, ...(settings.policyLinks || {}) },
+});
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -29,7 +42,7 @@ export function SettingsProvider({ children }) {
 
   useEffect(() => {
     api.get('/settings')
-      .then((res) => setSettings({ ...DEFAULT_SETTINGS, ...res.data.settings }))
+      .then((res) => setSettings(mergeSettings(res.data.settings)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

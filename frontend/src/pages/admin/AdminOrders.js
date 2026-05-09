@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 import useMediaQuery from '../../hooks/useMediaQuery';
 

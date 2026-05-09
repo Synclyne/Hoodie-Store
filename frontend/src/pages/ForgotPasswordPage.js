@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import { useSettings } from '../context/SettingsContext';
 

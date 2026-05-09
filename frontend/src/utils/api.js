@@ -1,15 +1,16 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || process.env.REACT_APP_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
-const appBasePath = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+const appBasePath = '';
+const canUseStorage = () => typeof window !== 'undefined' && window.localStorage;
 
 // Attach JWT token to every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('hoodie_token');
+  const token = canUseStorage() ? localStorage.getItem('hoodie_token') : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -18,7 +19,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && canUseStorage()) {
       localStorage.removeItem('hoodie_token');
       localStorage.removeItem('hoodie_user');
       window.location.href = `${appBasePath}/login`;

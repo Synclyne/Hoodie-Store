@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import useMediaQuery from '../hooks/useMediaQuery';
+import { ProductGridSkeleton } from '../components/Skeleton';
 
 const CATEGORIES = [
   { value: 'all',        label: 'All'         },
@@ -168,7 +169,7 @@ export default function ShopPage() {
           )}
 
           {loading ? (
-            <div style={s.loading}>Loading...</div>
+            <ProductGridSkeleton count={isMobile ? 6 : 8} />
           ) : products.length === 0 ? (
             <div style={s.empty}>No products found.</div>
           ) : (

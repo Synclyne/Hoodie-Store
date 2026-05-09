@@ -4,15 +4,21 @@ import api from '../utils/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('hoodie_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Verify token on mount
   useEffect(() => {
     const token = localStorage.getItem('hoodie_token');
+    const storedUser = localStorage.getItem('hoodie_user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem('hoodie_user');
+      }
+    }
+
     if (token) {
       api.get('/auth/me')
         .then(res => {

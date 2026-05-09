@@ -109,6 +109,15 @@ router.get('/meta/price-range', async (req, res) => {
   res.json({ maxPrice: result[0]?.maxPrice || 10000 });
 });
 
+router.get('/seo/sitemap', async (req, res) => {
+  const products = await Product.find({ isPublished: true })
+    .sort({ updatedAt: -1 })
+    .select('slug updatedAt category')
+    .lean();
+
+  res.json({ products });
+});
+
 router.get('/:slug/related', async (req, res) => {
   const product = await Product.findOne({ slug: req.params.slug });
   if (!product) return res.status(404).json({ error: 'Product not found.' });

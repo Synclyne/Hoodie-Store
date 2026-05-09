@@ -15,8 +15,7 @@ let cloudinary  = null;
 
 if (cloudinaryConfigured) {
   // ── Cloudinary mode ──────────────────────────────────
-  const _cloudinary          = require('cloudinary').v2;
-  const { CloudinaryStorage } = require('multer-storage-cloudinary');
+  const _cloudinary = require('cloudinary').v2;
 
   _cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,21 +23,51 @@ if (cloudinaryConfigured) {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  const storage = new CloudinaryStorage({
-    cloudinary: _cloudinary,
-    params: async (req, file) => ({
-      folder:          'hoodie-store/products',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation:  [
-        { width: 1200, height: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' },
-      ],
-    }),
+  const uploadBuffer = (file) => new Promise((resolve, reject) => {
+    const stream = _cloudinary.uploader.upload_stream(
+      {
+        folder: 'hoodie-store/products',
+        resource_type: 'image',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit', quality: 'auto', fetch_format: 'auto' },
+        ],
+      },
+      (err, result) => err ? reject(err) : resolve(result)
+    );
+    stream.end(file.buffer);
   });
 
-  upload = multer({
-    storage,
+  const memoryUpload = multer({
+    storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const ok = /\.(jpg|jpeg|png|webp)$/i.test(file.originalname);
+      cb(ok ? null : new Error('Only JPG, PNG and WebP images are allowed'), ok);
+    },
   });
+
+  upload = {
+    array: (fieldName, maxCount) => [
+      memoryUpload.array(fieldName, maxCount),
+      async (req, res, next) => {
+        try {
+          req.files = await Promise.all((req.files || []).map(async (file) => {
+            const result = await uploadBuffer(file);
+            return {
+              ...file,
+              path: result.secure_url,
+              filename: result.public_id,
+              public_id: result.public_id,
+            };
+          }));
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+    ],
+  };
 
   deleteImage = async (publicId) => {
     try { await _cloudinary.uploader.destroy(publicId); }

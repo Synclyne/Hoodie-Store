@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -7,10 +7,14 @@ import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/ProductCard';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { useSettings } from '../context/SettingsContext';
+import { PageSkeleton } from '../components/Skeleton';
 
 const fmt = (n) => `KSh ${Number(n).toLocaleString()}`;
+const sameOption = (a, b) => String(a || '').trim() === String(b || '').trim();
+const firstAvailableVariant = (product) =>
+  product?.variants?.find(v => v.stock > 0) || product?.variants?.[0] || null;
 
-export default function ProductPage() {
+export default function ProductPage({ initialProduct = null }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -19,11 +23,12 @@ export default function ProductPage() {
   const { settings } = useSettings();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  const [product,       setProduct]       = useState(null);
+  const [product,       setProduct]       = useState(initialProduct);
   const [related,       setRelated]       = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [selectedSize,  setSelectedSize]  = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
+  const [loading,       setLoading]       = useState(!initialProduct);
+  const initialVariant = firstAvailableVariant(initialProduct);
+  const [selectedSize,  setSelectedSize]  = useState(initialVariant?.size || null);
+  const [selectedColor, setSelectedColor] = useState(initialVariant?.color || null);
   const [qty,           setQty]           = useState(1);
   const [activeImg,     setActiveImg]     = useState(0);
   const [adding,        setAdding]        = useState(false);
@@ -36,8 +41,21 @@ export default function ProductPage() {
   const [notifyEmail,   setNotifyEmail]   = useState('');
   const [notifyMsg,     setNotifyMsg]     = useState('');
   const [wishlistMsg,   setWishlistMsg]   = useState('');
+  const [currentUrl,    setCurrentUrl]    = useState('');
 
   useEffect(() => {
+    if (initialProduct && initialProduct.slug === slug) {
+      setProduct(initialProduct);
+      setLoading(false);
+      api.get(`/products/${slug}/related`).then(r => setRelated(r.data.products)).catch(() => {});
+      try {
+        const viewed = JSON.parse(localStorage.getItem('hoodie_viewed') || '[]');
+        const filtered = viewed.filter(id => id !== initialProduct._id).slice(0, 9);
+        localStorage.setItem('hoodie_viewed', JSON.stringify([initialProduct._id, ...filtered]));
+      } catch {}
+      return;
+    }
+
     setLoading(true);
     setAddError(''); setAddSuccess('');
     setSelectedSize(null); setSelectedColor(null);
@@ -45,8 +63,11 @@ export default function ProductPage() {
     api.get(`/products/${slug}`)
       .then(res => {
         setProduct(res.data.product);
-        const first = res.data.product.variants.find(v => v.stock > 0);
-        if (first) setSelectedColor(first.color);
+        const first = firstAvailableVariant(res.data.product);
+        if (first) {
+          setSelectedColor(first.color);
+          setSelectedSize(first.size);
+        }
         // Track recently viewed
         try {
           const viewed = JSON.parse(localStorage.getItem('hoodie_viewed') || '[]');
@@ -57,7 +78,25 @@ export default function ProductPage() {
       .catch(() => navigate('/shop'))
       .finally(() => setLoading(false));
     api.get(`/products/${slug}/related`).then(r => setRelated(r.data.products)).catch(() => {});
-  }, [slug, navigate]);
+  }, [slug, navigate, initialProduct]);
+
+  useEffect(() => {
+    if (!product?.variants?.length) return;
+
+    const currentVariant = product.variants.find(
+      v => sameOption(v.size, selectedSize) && sameOption(v.color, selectedColor) && v.stock > 0
+    );
+    if (currentVariant) return;
+
+    const first = firstAvailableVariant(product);
+    if (!first) return;
+    setSelectedColor(first.color);
+    setSelectedSize(first.size);
+  }, [product, selectedColor, selectedSize]);
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href);
+  }, []);
 
   const handleWishlistToggle = async () => {
     if (!user) { navigate('/login'); return; }
@@ -77,17 +116,18 @@ export default function ProductPage() {
     }
   };
 
-  if (loading) return <div className="page-loading">Loading...</div>;
+  if (loading) return <PageSkeleton variant="product" />;
   if (!product) return null;
 
   const primaryImg = product.images?.[activeImg];
   const availableSizes = product.variants
-    .filter(v => !selectedColor || v.color === selectedColor)
+    .filter(v => !selectedColor || sameOption(v.color, selectedColor))
     .map(v => ({ size: v.size, stock: v.stock }));
   const uniqueColors = [...new Map(product.variants.map(v => [v.color, { color: v.color, colorHex: v.colorHex, stock: product.variants.filter(x => x.color === v.color).reduce((s, x) => s + x.stock, 0) }])).values()];
-  const selectedVariant = product.variants.find(v => v.size === selectedSize && v.color === selectedColor);
+  const selectedVariant = product.variants.find(
+    v => sameOption(v.size, selectedSize) && sameOption(v.color, selectedColor)
+  );
   const discount = product.comparePrice ? Math.round((1 - product.price / product.comparePrice) * 100) : null;
-
   const handleAddToCart = async () => {
     if (!user) { navigate('/login'); return; }
     if (!selectedSize) { setAddError('Please select a size.'); return; }
@@ -235,7 +275,7 @@ export default function ProductPage() {
 
           {/* WhatsApp order button */}
           <a
-            href={`https://wa.me/${settings.whatsappNumber || '254700000000'}?text=${encodeURIComponent(`Hi! I'd like to order: *${product.name}*${selectedSize ? ` — Size: ${selectedSize}` : ''}${selectedColor ? `, Color: ${selectedColor}` : ''}\nLink: ${window.location.href}`)}`}
+            href={`https://wa.me/${settings.whatsappNumber || '254700000000'}?text=${encodeURIComponent(`Hi! I'd like to order: *${product.name}*${selectedSize ? ` — Size: ${selectedSize}` : ''}${selectedColor ? `, Color: ${selectedColor}` : ''}${currentUrl ? `\nLink: ${currentUrl}` : ''}`)}`}
             target="_blank" rel="noreferrer"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', border: '1px solid #25d366', color: '#25d366', background: 'transparent', fontFamily: 'Space Mono, monospace', fontSize: 10, letterSpacing: 1, textDecoration: 'none', marginBottom: 20 }}
           >

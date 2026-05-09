@@ -214,7 +214,7 @@ router.put('/users/:id/role', ownerOnly, async (req, res) => {
   res.json({ user });
 });
 
-const ADMIN_PERMISSIONS = ['homepage', 'products', 'orders', 'shipping', 'coupons', 'settings', 'staff'];
+const ADMIN_PERMISSIONS = ['homepage', 'products', 'orders', 'shipping', 'coupons', 'settings', 'support', 'staff'];
 
 // GET /api/admin/staff
 router.get('/staff', ownerOnly, async (req, res) => {

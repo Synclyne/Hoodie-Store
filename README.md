@@ -1,277 +1,212 @@
-# HOODIE Store — Full-Stack E-Commerce Platform
+# HOODIE Store
 
-A production-ready clothing store built with **React**, **Node.js/Express**, **MongoDB**, and **Stripe**.
-
----
+Full-stack streetwear store built with Next.js, Node.js/Express, MongoDB, JWT auth, and Flutterwave payments.
 
 ## Tech Stack
 
-| Layer    | Technology                              |
-|----------|-----------------------------------------|
-| Frontend | React 18, React Router v6, Stripe.js   |
-| Backend  | Node.js, Express, JWT auth             |
-| Database | MongoDB (Mongoose ODM)                 |
-| Payments | Stripe (PaymentIntents API)            |
-| Hosting  | Render (backend) + Vercel (frontend)   |
-
----
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js 16, React 18, route-level SEO |
+| Backend | Node.js, Express, JWT auth |
+| Database | MongoDB, Mongoose |
+| Payments | Flutterwave, Cash on Delivery |
+| Hosting | Render backend + Vercel frontend |
 
 ## Project Structure
 
-```
+```text
 hoodie-store/
-├── backend/
-│   ├── src/
-│   │   ├── middleware/     # auth.js, errorHandler.js
-│   │   ├── models/         # User, Product, Cart, Order
-│   │   ├── routes/         # auth, products, cart, orders, payments, admin
-│   │   ├── utils/          # db.js, seed.js
-│   │   └── server.js
-│   ├── uploads/            # local image uploads
-│   ├── .env.example
-│   └── package.json
-├── frontend/
-│   ├── public/
-│   │   └── index.html
-│   ├── src/
-│   │   ├── components/     # Navbar, CartDrawer, ProductCard, Toast
-│   │   ├── context/        # AuthContext, CartContext
-│   │   ├── pages/          # All customer + admin pages
-│   │   ├── utils/          # api.js (axios instance)
-│   │   ├── App.js
-│   │   └── index.js
-│   ├── .env.example
-│   └── package.json
-└── package.json            # root convenience scripts
+  backend/
+    src/
+      middleware/
+      models/
+      routes/
+      utils/
+      server.js
+    uploads/
+    package.json
+  frontend/
+    pages/                 Next.js routes, SEO, sitemap, robots
+    public/                static assets
+    src/
+      components/
+      context/
+      hooks/
+      next/                Next shell, SEO helpers, router compatibility
+      pages/               storefront/admin screen components
+      styles/
+      utils/
+    .env.example
+    next.config.js
+    package.json
+  package.json             root convenience scripts
 ```
 
----
+## Local Setup
 
-## Local Setup (5 minutes)
-
-### 1. Clone and install
+Install dependencies:
 
 ```bash
-git clone <your-repo-url>
-cd hoodie-store
-
-# Install all dependencies (both backend and frontend)
 npm run install:all
 ```
 
-### 2. Configure environment variables
+Create `backend/.env`:
 
-**Backend** — copy and fill in:
-```bash
-cp backend/.env.example backend/.env
-```
-
-Edit `backend/.env`:
 ```env
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/hoodie_store
-JWT_SECRET=<run: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
+JWT_SECRET=<secure random value>
 JWT_EXPIRES_IN=7d
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
 CLIENT_URL=http://localhost:3000
 ADMIN_EMAIL=admin@yourstore.com
 ADMIN_PASSWORD=ChangeMe123!
 ```
 
-**Frontend** — copy and fill in:
-```bash
-cp frontend/.env.example frontend/.env
-```
+Create `frontend/.env` from `frontend/.env.example`:
 
-Edit `frontend/.env`:
 ```env
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_...
-REACT_APP_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 3. Start MongoDB
-
-```bash
-# macOS (Homebrew)
-brew services start mongodb-community
-
-# Ubuntu/Debian
-sudo systemctl start mongod
-
-# Or use MongoDB Atlas (cloud) — paste the connection string in MONGODB_URI
-```
-
-### 4. Seed the database
+Seed and run:
 
 ```bash
 npm run seed
-```
-
-This creates:
-- **Admin account**: `admin@yourstore.com` / `ChangeMe123!`
-- **Sample customer**: `customer@example.com` / `Customer123!`
-- **6 sample products** with variants and stock
-
-### 5. Run the project
-
-```bash
-# Run both backend and frontend together
 npm run dev
-
-# Or separately:
-npm run dev:backend    # http://localhost:5000
-npm run dev:frontend   # http://localhost:3000
 ```
 
----
+Frontend: `http://localhost:3000`
+Backend: `http://localhost:5000`
 
-## Stripe Setup
+## SEO
 
-### Test payments
-Use Stripe test card: `4242 4242 4242 4242` · any future expiry · any CVC
+The frontend is now served by Next.js route files instead of a single CRA shell.
 
-### Webhook (local testing)
+- Public routes emit route-specific titles, descriptions, canonicals, Open Graph tags, and Twitter card tags.
+- Product pages fetch product data during server rendering and emit product-specific metadata.
+- Product pages include Product JSON-LD when product data is available.
+- The homepage includes ClothingStore JSON-LD.
+- `/robots.txt` and `/sitemap.xml` are served by Next.js.
+- `/sitemap.xml` includes static storefront routes and published products from `GET /api/products/seo/sitemap`.
+- Private, auth, checkout, and admin pages are marked `noindex`.
+
+Set `NEXT_PUBLIC_SITE_URL` to the production domain before deployment so canonical URLs and sitemap URLs are correct.
+
+## Scripts
+
+Root:
+
 ```bash
-# Install Stripe CLI: https://stripe.com/docs/stripe-cli
-stripe listen --forward-to localhost:5000/api/payments/webhook
-# Copy the webhook secret → paste into STRIPE_WEBHOOK_SECRET in .env
+npm run install:all
+npm run dev
+npm run build
+npm run start
+npm run seed
 ```
 
----
+Frontend:
 
-## Features
+```bash
+npm run dev --prefix frontend
+npm run build --prefix frontend
+npm run start --prefix frontend
+```
 
-### Customer
-- ✅ Register / Login / JWT auth
-- ✅ Browse products with filters (category, gender, price)
-- ✅ Full product detail page (variants, size/colour picker, reviews)
-- ✅ Persistent cart (per user, synced to DB)
-- ✅ Stripe checkout with real payment
-- ✅ Order confirmation with status tracker
-- ✅ Order history page
-- ✅ Account management (profile, password, addresses)
+Backend:
 
-### Admin (`/admin`)
-- ✅ Analytics dashboard (revenue, orders, customers, top products)
-- ✅ Revenue chart (last 6 months)
-- ✅ Product CRUD (create, edit, publish/unpublish, delete)
-- ✅ Variant management (size × colour × stock)
-- ✅ Order management (update status, add tracking number)
-- ✅ View all customers
-
----
+```bash
+npm run dev --prefix backend
+npm start --prefix backend
+```
 
 ## Deployment
 
-### Backend → Render.com
+### Backend on Render
 
-1. Push code to GitHub
-2. New Web Service on [render.com](https://render.com)
-3. **Root directory**: `backend`
-4. **Build command**: `npm install`
-5. **Start command**: `node src/server.js`
-6. Add all environment variables from `backend/.env.example`
-7. Set `NODE_ENV=production` and `CLIENT_URL=https://your-frontend.vercel.app`
+1. Create a Render Web Service.
+2. Root directory: `backend`
+3. Build command: `npm install`
+4. Start command: `node src/server.js`
+5. Set `NODE_ENV=production`.
+6. Set `CLIENT_URL` to the production frontend URL.
+7. Add the remaining backend environment variables.
 
-### Frontend → Vercel
+### Frontend on Vercel
 
-1. New project on [vercel.com](https://vercel.com)
-2. **Root directory**: `frontend`
-3. **Build command**: `npm run build`
-4. **Output directory**: `build`
-5. Add environment variables:
-   - `REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...`
-   - `REACT_APP_API_URL=https://your-backend.onrender.com/api`
+1. Create a Vercel project.
+2. Root directory: `frontend`
+3. Build command: `npm run build`
+4. Framework preset: Next.js
+5. Add:
 
-### Database → MongoDB Atlas (free tier)
+```env
+NEXT_PUBLIC_API_URL=https://your-backend.onrender.com/api
+NEXT_PUBLIC_SITE_URL=https://your-frontend-domain.com
+```
 
-1. Create cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. Add your server IP to Network Access
-3. Copy connection string → paste into `MONGODB_URI`
+## Key Routes
 
----
+Customer:
 
-## API Reference
+- `/`
+- `/shop`
+- `/shop/[category]`
+- `/product/[slug]`
+- `/cart`
+- `/checkout`
+- `/account`
+- `/account/orders`
+- `/wishlist`
 
-### Auth
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| POST | `/api/auth/register` | — | Create account |
-| POST | `/api/auth/login` | — | Sign in |
-| GET | `/api/auth/me` | ✅ | Get profile |
-| PUT | `/api/auth/me` | ✅ | Update profile |
-| PUT | `/api/auth/change-password` | ✅ | Change password |
+Admin:
 
-### Products
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/products` | List with filters |
-| GET | `/api/products/featured` | Featured products |
-| GET | `/api/products/:slug` | Single product |
-| GET | `/api/products/:slug/related` | Related products |
-| POST | `/api/products/:id/reviews` | Add review (auth) |
+- `/admin`
+- `/admin/products`
+- `/admin/products/new`
+- `/admin/products/[id]/edit`
+- `/admin/orders`
+- `/admin/homepage`
+- `/admin/media`
+- `/admin/coupons`
+- `/admin/shipping`
+- `/admin/settings`
+- `/admin/staff`
+- `/admin/support`
 
-### Cart
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/cart` | Get cart |
-| POST | `/api/cart/items` | Add item |
-| PUT | `/api/cart/items/:itemId` | Update qty |
-| DELETE | `/api/cart/items/:itemId` | Remove item |
-| DELETE | `/api/cart` | Clear cart |
+SEO:
 
-### Orders
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/orders` | My orders |
-| GET | `/api/orders/:id` | Single order |
+- `/robots.txt`
+- `/sitemap.xml`
 
-### Payments
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/payments/create-intent` | Create Stripe PaymentIntent |
-| POST | `/api/payments/confirm-order` | Confirm order after payment |
-| POST | `/api/payments/webhook` | Stripe webhook |
+## API Highlights
 
-### Admin (admin only)
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/admin/products` | All products |
-| GET | `/api/admin/products/:id` | Single product |
-| POST | `/api/admin/products` | Create product |
-| PUT | `/api/admin/products/:id` | Update product |
-| DELETE | `/api/admin/products/:id` | Unpublish product |
-| GET | `/api/admin/orders` | All orders |
-| PUT | `/api/admin/orders/:id` | Update order |
-| GET | `/api/admin/users` | All users |
-| GET | `/api/admin/analytics` | Dashboard stats |
-| GET | `/api/admin/analytics/revenue-chart` | Revenue chart data |
+Products:
 
----
+- `GET /api/products`
+- `GET /api/products/featured`
+- `GET /api/products/trending`
+- `GET /api/products/:slug`
+- `GET /api/products/:slug/related`
+- `GET /api/products/seo/sitemap`
 
-## Customisation Guide
+Settings:
 
-### Change brand name
-Search and replace `HOODIE` in:
-- `frontend/public/index.html` (title, meta)
-- `frontend/src/pages/HomePage.js` (hero, footer)
-- `frontend/src/components/Navbar.js` (logo)
+- `GET /api/settings`
 
-### Change currency
-- Backend: `backend/src/routes/payments.js` → change `currency: 'kes'` to your ISO code
-- Frontend: Replace all `KSh` format strings in `fmt()` helpers
+Admin:
 
-### Change shipping threshold
-- Backend: `payments.js` → `subtotal >= 5000 ? 0 : 500`
-- Frontend: Same threshold in `CartPage.js`, `CartDrawer.js`, `CheckoutPage.js`
+- `GET /api/admin/products`
+- `POST /api/admin/products`
+- `PUT /api/admin/products/:id`
+- `GET /api/admin/orders`
+- `PUT /api/admin/orders/:id`
+- `GET /api/admin/homepage`
+- `PUT /api/admin/homepage`
 
-### Change VAT rate
-- Backend: `payments.js` → `subtotal * 0.16`
-- Frontend: Same in `CartPage.js`, `CartDrawer.js`, `CheckoutPage.js`
+## Notes
 
----
-
-## License
-MIT — use freely for commercial projects.
+- The interactive storefront and admin screens are hydrated client-side under Next route files.
+- Product SEO is server-rendered when `NEXT_PUBLIC_API_URL` is reachable during the request.
+- Keep `NEXT_PUBLIC_SITE_URL` accurate in every environment that should be indexed.

@@ -1,7 +1,6 @@
 const axios = require('axios');
 const express  = require('express');
 const router   = express.Router();
-const Flutterwave = require('flutterwave-node-v3');
 const crypto   = require('crypto');
 const { protect } = require('../middleware/auth');
 const Cart    = require('../models/Cart');
@@ -12,14 +11,16 @@ const ShippingZone = require('../models/ShippingZone');
 const StoreSettings = require('../models/StoreSettings');
 const { sendOrderConfirmation } = require('../utils/email');
 
-const flw = new Flutterwave(
-  process.env.FLW_PUBLIC_KEY,
-  process.env.FLW_SECRET_KEY
-);
-
 // ─── Pricing helpers ─────────────────────────────
 const calcPricing = async (subtotal, shippingZoneId) => {
-  let shipping = subtotal >= 5000 ? 0 : 500;
+  const activeZoneCount = await ShippingZone.countDocuments({ isActive: true });
+  if (activeZoneCount > 0 && !shippingZoneId) {
+    const err = new Error('Please select a delivery zone.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  let shipping = 0;
 
   if (shippingZoneId) {
     const zone = await ShippingZone.findOne({ _id: shippingZoneId, isActive: true });
@@ -269,13 +270,21 @@ router.post('/verify', protect, async (req, res) => {
   if (existing) return res.json({ order: existing });
 
   // Verify with Flutterwave
-  const response = await flw.Transaction.verify({ id: transaction_id });
+  const response = await axios.get(
+    `https://api.flutterwave.com/v3/transactions/${encodeURIComponent(transaction_id)}/verify`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+      },
+    }
+  );
+  const verification = response.data;
 
-  if (response.status !== 'success' || response.data.status !== 'successful') {
+  if (verification.status !== 'success' || verification.data?.status !== 'successful') {
     return res.status(400).json({ error: 'Payment not confirmed by Flutterwave.' });
   }
 
-  const flwData = response.data;
+  const flwData = verification.data;
 
   // Re-fetch cart
   const cart = await Cart.findOne({ user: req.user._id })

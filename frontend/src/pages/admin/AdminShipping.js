@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 
 const fmt  = (n) => `KSh ${Number(n).toLocaleString()}`;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../next/ReactRouterCompat';
 import api from '../../utils/api';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   whatsappNumber: '254700000000',
   currencyCode: 'KES',
   currencyLabel: 'KSh',
+  freeShippingVisible: true,
   freeShippingText: 'FREE SHIPPING ON ORDERS OVER KSh 5,000',
   locationName: '',
   locationAddress: '',
@@ -17,6 +18,19 @@ const DEFAULT_SETTINGS = {
   socialLinks: { instagram: '', telegram: '', facebook: '', x: '' },
   policyLinks: { returns: '', shipping: '', privacy: '', terms: '' },
 };
+
+const mergeSettings = (settings = {}) => ({
+  ...DEFAULT_SETTINGS,
+  ...settings,
+  socialLinks: { ...DEFAULT_SETTINGS.socialLinks, ...(settings.socialLinks || {}) },
+  policyLinks: {
+    returns: '',
+    shipping: '',
+    privacy: '/privacy-policy',
+    terms: '/terms-and-conditions',
+    ...(settings.policyLinks || {}),
+  },
+});
 
 export default function AdminSettings() {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -28,12 +42,13 @@ export default function AdminSettings() {
 
   useEffect(() => {
     api.get('/settings/admin')
-      .then(r => setSettings({ ...DEFAULT_SETTINGS, ...r.data.settings }))
+      .then(r => setSettings(mergeSettings(r.data.settings)))
       .catch(err => setError(err.response?.data?.error || 'Failed to load settings.'))
       .finally(() => setLoading(false));
   }, []);
 
   const set = (key) => (e) => setSettings(prev => ({ ...prev, [key]: e.target.value }));
+  const setChecked = (key) => (e) => setSettings(prev => ({ ...prev, [key]: e.target.checked }));
   const setNested = (group, key) => (e) => setSettings(prev => ({
     ...prev,
     [group]: { ...(prev[group] || {}), [key]: e.target.value },
@@ -46,7 +61,7 @@ export default function AdminSettings() {
     setSaved(false);
     try {
       const res = await api.put('/settings/admin', settings);
-      setSettings({ ...DEFAULT_SETTINGS, ...res.data.settings });
+      setSettings(mergeSettings(res.data.settings));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -85,6 +100,7 @@ export default function AdminSettings() {
             <Field label="CURRENCY CODE" value={settings.currencyCode || ''} onChange={set('currencyCode')} />
             <Field label="CURRENCY LABEL" value={settings.currencyLabel || ''} onChange={set('currencyLabel')} />
           </TwoCol>
+          <Toggle label="Show free shipping bar at the top of the site" checked={settings.freeShippingVisible !== false} onChange={setChecked('freeShippingVisible')} />
           <Field label="FREE SHIPPING TEXT" value={settings.freeShippingText || ''} onChange={set('freeShippingText')} />
         </Section>
 
@@ -113,8 +129,8 @@ export default function AdminSettings() {
             <Field label="SHIPPING URL" value={settings.policyLinks?.shipping || ''} onChange={setNested('policyLinks', 'shipping')} />
           </TwoCol>
           <TwoCol isMobile={isMobile}>
-            <Field label="PRIVACY URL" value={settings.policyLinks?.privacy || ''} onChange={setNested('policyLinks', 'privacy')} />
-            <Field label="TERMS URL" value={settings.policyLinks?.terms || ''} onChange={setNested('policyLinks', 'terms')} />
+            <Field label="PRIVACY URL" value={settings.policyLinks?.privacy || '/privacy-policy'} onChange={setNested('policyLinks', 'privacy')} />
+            <Field label="TERMS URL" value={settings.policyLinks?.terms || '/terms-and-conditions'} onChange={setNested('policyLinks', 'terms')} />
           </TwoCol>
         </Section>
 
@@ -145,6 +161,15 @@ function Field({ label, value, onChange, type = 'text' }) {
       <label style={s.label}>{label}</label>
       <input type={type} value={value} onChange={onChange} style={s.input} />
     </div>
+  );
+}
+
+function Toggle({ label, checked, onChange }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#0a0a0a', cursor: 'pointer' }}>
+      <input type="checkbox" checked={checked} onChange={onChange} style={{ accentColor: '#0a0a0a', width: 15, height: 15 }} />
+      {label}
+    </label>
   );
 }
 

@@ -46,6 +46,8 @@ const customSectionSchema = new mongoose.Schema({
 }, { _id: false });
 
 const homepageConfigSchema = new mongoose.Schema({
+  siteBackgroundColor: { type: String, default: '#f5f3ef' },
+  siteBackgroundImage: { type: String, default: '' },
   announcementText:    { type: String, default: 'FREE SHIPPING ON ORDERS OVER KSh 5,000 ✦ NEW COLLECTION NOW LIVE' },
   announcementVisible: { type: Boolean, default: true },
   // Hero slides — supports multiple slides that auto-scroll

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from '../next/ReactRouterCompat';
 import api from '../utils/api';
 import { useSettings } from '../context/SettingsContext';
 

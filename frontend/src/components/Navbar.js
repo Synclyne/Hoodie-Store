@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../next/ReactRouterCompat';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
@@ -44,9 +44,11 @@ export default function Navbar() {
   return (
     <>
       {/* Announcement bar */}
-      <div style={s.announce}>
+      {settings.freeShippingVisible !== false && (
+        <div style={s.announce}>
         {settings.freeShippingText || 'FREE SHIPPING ON ORDERS OVER KSh 5,000'} ✦ NEW COLLECTION NOW LIVE
-      </div>
+        </div>
+      )}
 
       {/* Main nav */}
       <nav style={s.nav}>
@@ -86,6 +88,7 @@ export default function Navbar() {
                     <div style={s.dropHead}>Hi, {user.firstName}</div>
                     <Link to="/account"        style={s.dropItem} onClick={() => setAccountOpen(false)}>My Account</Link>
                     <Link to="/account/orders" style={s.dropItem} onClick={() => setAccountOpen(false)}>My Orders</Link>
+                    <Link to="/support"        style={s.dropItem} onClick={() => setAccountOpen(false)}>Support</Link>
                     <Link to="/wishlist"        style={s.dropItem} onClick={() => setAccountOpen(false)}>Wishlist</Link>
                     {isAdmin && (
                       <Link to="/admin" style={{ ...s.dropItem, color: '#e03030' }} onClick={() => setAccountOpen(false)}>Admin Panel</Link>
@@ -150,6 +153,7 @@ export default function Navbar() {
                 <>
                   <Link to="/account"        style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>My Account</Link>
                   <Link to="/account/orders" style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>My Orders</Link>
+                  <Link to="/support"        style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>Support</Link>
                   <Link to="/wishlist"        style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>Wishlist 🤍</Link>
                   {isAdmin && <Link to="/admin" style={{ ...s.drawerLink, color: '#e03030' }} onClick={() => setMobileNavOpen(false)}>Admin Panel</Link>}
                   <button style={s.drawerBtn} onClick={handleLogout}>Sign Out</button>
@@ -158,6 +162,7 @@ export default function Navbar() {
                 <>
                   <Link to="/login"    style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>Sign In</Link>
                   <Link to="/register" style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>Create Account</Link>
+                  <Link to="/support"  style={s.drawerLink} onClick={() => setMobileNavOpen(false)}>Support</Link>
                 </>
               )}
             </div>

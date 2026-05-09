@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../next/ReactRouterCompat';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import useMediaQuery from '../hooks/useMediaQuery';

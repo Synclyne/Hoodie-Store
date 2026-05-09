@@ -247,6 +247,34 @@ async function sendNewsletterConfirmation(userEmail) {
   });
 }
 
+async function sendSupportReply(ticket, replyBody) {
+  if (!process.env.EMAIL_USER) return { sent: false, skipped: true };
+  const brand = await getBrand();
+  const ticketUrl = `${CLIENT_URL}/support?ticket=${ticket._id}&token=${ticket.accessToken}`;
+
+  const content = `
+    <h2 style="font-family:monospace;font-size:13px;letter-spacing:2px;color:#888">SUPPORT REPLY</h2>
+    <h3 style="font-size:22px;margin:4px 0 16px">Hi ${ticket.name}, we replied to your support request.</h3>
+    <p class="label">SUBJECT</p>
+    <p style="font-size:14px;color:#222;line-height:1.7;margin:4px 0 18px">${ticket.subject}</p>
+    <div style="border:1px solid #d0cdc9;padding:16px;margin:16px 0;background:#f5f3ef">
+      <p style="font-size:13px;color:#333;line-height:1.8;white-space:pre-wrap;margin:0">${replyBody}</p>
+    </div>
+    <a href="${ticketUrl}" class="btn">OPEN SUPPORT CHAT</a>
+    <p style="font-size:12px;color:#888;margin-top:18px">
+      You can reply from the support chat page. You can also reply to this email if your email client supports it.
+    </p>
+  `;
+
+  await transporter.sendMail({
+    from: brand.from,
+    to: ticket.email,
+    subject: `Re: ${ticket.subject} - ${brand.name} Support`,
+    html: htmlWrap(content, brand.name),
+  });
+  return { sent: true };
+}
+
 module.exports = {
   sendOrderConfirmation,
   sendWelcomeEmail,
@@ -254,4 +282,5 @@ module.exports = {
   sendDeliveryNotification,
   sendPasswordReset,
   sendNewsletterConfirmation,
+  sendSupportReply,
 };

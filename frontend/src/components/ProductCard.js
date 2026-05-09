@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../next/ReactRouterCompat';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import useMediaQuery from '../hooks/useMediaQuery';

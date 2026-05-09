@@ -23,19 +23,42 @@ const stockNotifyRoutes = require('./routes/stockNotify');
 const shippingRoutes = require('./routes/shipping');
 const settingsRoutes = require('./routes/settings');
 const newsletterRoutes = require('./routes/newsletter');
+const supportRoutes = require('./routes/support');
 
 const app = express();
 app.set('trust proxy', 1);
 
-const getClientOrigin = () => {
+const toOrigin = (value) => {
+  if (!value) return null;
   try {
-    return new URL(process.env.CLIENT_URL || 'http://localhost:3000').origin;
+    return new URL(value).origin;
   } catch {
-    return process.env.CLIENT_URL || 'http://localhost:3000';
+    return value;
   }
 };
 
-const clientOrigin = getClientOrigin();
+const clientOrigins = [...new Set([
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  process.env.NEXT_PUBLIC_SITE_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].map(toOrigin).filter(Boolean))];
+const isProduction = process.env.NODE_ENV === 'production';
+const isLocalDevOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin);
+const corsOrigin = (origin, callback) => {
+  if (!origin || clientOrigins.includes(origin) || (!isProduction && isLocalDevOrigin(origin))) {
+    callback(null, true);
+    return;
+  }
+  callback(new Error(`Origin ${origin} is not allowed by CORS`));
+};
+const corsOptions = {
+  origin: corsOrigin,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+};
 
 // ─── Connect Database ─────────────────────────────
 connectDB().then(() => ensureAdmin().catch(err => {
@@ -44,26 +67,16 @@ connectDB().then(() => ensureAdmin().catch(err => {
 
 // ─── Security Middleware ──────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: clientOrigin,
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-}));
+app.use(cors(corsOptions));
 
 // Explicitly handle preflight OPTIONS for all routes
-app.options('*', cors({
-  origin: clientOrigin,
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-}));
+app.options('*', cors(corsOptions));
 
 // ─── Rate Limiting ────────────────────────────────
 // Auth endpoints — strict (prevents brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isProduction ? 10 : 100,
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 app.use('/api/auth/', authLimiter);
@@ -79,9 +92,12 @@ app.use('/api/admin/', adminLimiter);
 // Public API — moderate
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: isProduction ? 200 : 2000,
   message: { error: 'Too many requests, please try again later.' },
-  skip: (req) => req.path.startsWith('/admin'), // admin already has its own limiter
+  skip: (req) =>
+    req.path === '/health' ||
+    req.path.startsWith('/admin') ||
+    req.path.startsWith('/auth'),
 });
 app.use('/api/', limiter);
 
@@ -111,6 +127,7 @@ app.use('/api/stock-notify', stockNotifyRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/support', supportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -126,7 +143,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`\n🚀 HOODIE Store API running on port ${PORT}`);
   console.log(`   Env: ${process.env.NODE_ENV}`);
-  console.log(`   CORS: ${process.env.CLIENT_URL}\n`);
+  console.log(`   CORS: ${clientOrigins.join(', ')}\n`);
 });
 
 module.exports = app;
