@@ -44,10 +44,13 @@ export default function AdminProductEdit() {
 
   const set = k => e => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setForm(f => ({ ...f, [k]: val }));
-    if (k === 'name' && isNew) {
-      setForm(f => ({ ...f, name: val, slug: val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }));
-    }
+    setForm(f => ({
+      ...f,
+      [k]: val,
+      ...(k === 'name' && isNew
+        ? { slug: val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') }
+        : {}),
+    }));
     if (k === 'category') {
       setNewVariant(v => ({ ...v, size: val === 'shoes' ? '40' : 'M' }));
     }

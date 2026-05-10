@@ -1,6 +1,6 @@
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
 export function Link({ to, href, replace, children, ...props }) {
   return (
@@ -13,7 +13,7 @@ export function Link({ to, href, replace, children, ...props }) {
 export function useNavigate() {
   const router = useRouter();
 
-  return (to, options = {}) => {
+  return useCallback((to, options = {}) => {
     if (typeof to === 'number') {
       if (to === -1) router.back();
       return;
@@ -21,7 +21,7 @@ export function useNavigate() {
 
     if (options.replace) return router.replace(to);
     return router.push(to);
-  };
+  }, [router]);
 }
 
 export function useParams() {

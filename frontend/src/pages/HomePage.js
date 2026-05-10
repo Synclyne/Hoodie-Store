@@ -714,10 +714,11 @@ export default function HomePage({ initialConfig = null, initialFeatured = [] })
         {/* Image box sits below — no overlap */}
         <div
           onWheel={(e) => {
+            if (isMobile) return;
             if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) moveHero(e.deltaX > 0 ? 1 : -1);
           }}
-          onMouseEnter={() => { heroPausedRef.current = true; }}
-          onMouseLeave={() => { pauseHeroAuto(4000); }}
+          onMouseEnter={isMobile ? undefined : () => { heroPausedRef.current = true; }}
+          onMouseLeave={isMobile ? undefined : () => { pauseHeroAuto(4000); }}
           onTouchStart={isMobile ? undefined : (e) => { heroPointerRef.current = e.touches[0].clientX; heroDraggedRef.current = false; heroPausedRef.current = true; }}
           onTouchEnd={isMobile ? undefined : (e) => {
             if (heroPointerRef.current == null) return;
@@ -730,8 +731,8 @@ export default function HomePage({ initialConfig = null, initialFeatured = [] })
             }
             heroPointerRef.current = null;
           }}
-          onMouseDown={(e) => { heroPointerRef.current = e.clientX; heroDraggedRef.current = false; heroPausedRef.current = true; }}
-          onMouseUp={(e) => {
+          onMouseDown={isMobile ? undefined : (e) => { heroPointerRef.current = e.clientX; heroDraggedRef.current = false; heroPausedRef.current = true; }}
+          onMouseUp={isMobile ? undefined : (e) => {
             if (heroPointerRef.current == null) return;
             const delta = e.clientX - heroPointerRef.current;
             if (Math.abs(delta) > 40) {
@@ -749,7 +750,7 @@ export default function HomePage({ initialConfig = null, initialFeatured = [] })
             margin: '0 auto',
             height: isMobile ? 280 : 320,
             overflow: 'hidden',
-            cursor: heroSlides.length > 1 ? 'grab' : 'default',
+            cursor: !isMobile && heroSlides.length > 1 ? 'grab' : 'default',
             touchAction: 'pan-y',
           }}
         >
@@ -788,7 +789,7 @@ export default function HomePage({ initialConfig = null, initialFeatured = [] })
                     opacity: visible ? (offset === 0 ? 1 : 0.78) : 0,
                     zIndex: offset === 0 ? 2 : 1,
                     pointerEvents: visible ? 'auto' : 'none',
-                    cursor: offset === 0 ? 'grab' : 'pointer',
+                    cursor: !isMobile && offset === 0 ? 'grab' : 'pointer',
                     transition: 'transform 900ms cubic-bezier(.22,.61,.36,1), opacity 900ms cubic-bezier(.22,.61,.36,1)',
                   }}
                 >

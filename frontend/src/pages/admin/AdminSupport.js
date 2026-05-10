@@ -140,13 +140,15 @@ function MessageCard({ message, onUpdate, onReply, onDelete, isMobile }) {
               alignSelf: item.author === 'admin' ? 'flex-end' : 'flex-start',
               background: item.author === 'admin' ? '#0a0a0a' : '#ede9e3',
               color: item.author === 'admin' ? '#f5f3ef' : '#0a0a0a',
+              borderBottomRightRadius: item.author === 'admin' ? 2 : 8,
+              borderBottomLeftRadius: item.author === 'admin' ? 8 : 2,
             }}
           >
-            <p style={s.bubbleMeta}>
+            <p style={s.bubbleText}>{item.body}</p>
+            <p style={{ ...s.bubbleMeta, textAlign: item.author === 'admin' ? 'right' : 'left' }}>
               {item.author === 'admin' ? 'SUPPORT' : 'CUSTOMER'} / {new Date(item.createdAt).toLocaleString()}
               {item.emailed ? ' / EMAILED' : ''}
             </p>
-            <p style={s.bubbleText}>{item.body}</p>
           </div>
         ))}
       </div>
@@ -179,10 +181,10 @@ const s = {
   meta: { fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: 1.5, color: '#888', marginBottom: 5 },
   subject: { fontFamily: 'Anton, sans-serif', fontSize: 28, lineHeight: 1, marginBottom: 8 },
   customer: { fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#666', lineHeight: 1.7 },
-  thread: { display: 'flex', flexDirection: 'column', gap: 10, border: '1px solid #d0cdc9', padding: 12, margin: '14px 0', maxHeight: 360, overflowY: 'auto' },
-  bubble: { width: 'min(88%, 620px)', padding: '10px 12px', border: '1px solid #d0cdc9' },
-  bubbleMeta: { fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: 1.2, opacity: .62, marginBottom: 6 },
-  bubbleText: { fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' },
+  thread: { display: 'flex', flexDirection: 'column', gap: 7, border: '1px solid #d0cdc9', padding: 12, margin: '14px 0', maxHeight: 430, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', background: '#ede9e3' },
+  bubble: { width: 'fit-content', maxWidth: 'min(78%, 620px)', padding: '8px 10px', border: '1px solid rgba(10,10,10,.08)', borderRadius: 8, boxShadow: '0 1px 1px rgba(10,10,10,.05)' },
+  bubbleMeta: { fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: .8, opacity: .58, marginTop: 5 },
+  bubbleText: { fontSize: 13, lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word' },
   label: { display: 'block', fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: 1.5, color: '#888', marginBottom: 6 },
   note: { width: '100%', border: '1px solid #d0cdc9', background: 'transparent', padding: 10, resize: 'vertical', fontSize: 13, outline: 'none' },
   select: { border: '1px solid #d0cdc9', background: 'transparent', padding: '9px 10px', fontFamily: 'Space Mono, monospace', fontSize: 10, alignSelf: 'start' },
