@@ -22,6 +22,14 @@ const addressSnapshot = new mongoose.Schema({
   phone:      String,
 }, { _id: false });
 
+const deliveryLocationSnapshot = new mongoose.Schema({
+  lat:      Number,
+  lng:      Number,
+  accuracy: Number,
+  mapsUrl:  String,
+  capturedAt: Date,
+}, { _id: false });
+
 const orderSchema = new mongoose.Schema({
   orderNumber: { type: String, unique: true },
   user: {
@@ -31,6 +39,7 @@ const orderSchema = new mongoose.Schema({
   },
   items: [orderItemSchema],
   shippingAddress: { type: addressSnapshot, required: true },
+  deliveryLocation: { type: deliveryLocationSnapshot, default: null },
   // Pricing breakdown
   subtotal:  { type: Number, required: true },
   shipping:  { type: Number, required: true, default: 0 },

@@ -101,7 +101,7 @@ const restoreCartStock = (cart) => Promise.all(cart.items.map(item => Product.up
 // Flutterwave redirect flow: frontend opens Flutterwave's hosted page,
 // user pays, Flutterwave redirects back to our redirect_url with tx_ref.
 router.post('/initiate', protect, async (req, res) => {
-  const { shippingAddress, customerNote = '', shippingZoneId } = req.body;
+  const { shippingAddress, customerNote = '', shippingZoneId, deliveryLocation = null } = req.body;
 
   if (!shippingAddress) {
     return res.status(400).json({ error: 'shippingAddress is required.' });
@@ -198,6 +198,7 @@ pricing.total = Math.max(
       quantity: item.quantity,
     })),
     shippingAddress,
+    deliveryLocation,
     subtotal: pricing.subtotal,
     shipping: pricing.shipping,
     tax: pricing.tax,
@@ -259,7 +260,7 @@ console.log('PRICING:', pricing);
 // Step 2: called by frontend after Flutterwave redirects back
 // Flutterwave appends ?transaction_id=xxx&tx_ref=xxx&status=xxx to redirect_url
 router.post('/verify', protect, async (req, res) => {
-  const { transaction_id, tx_ref, shippingAddress, customerNote = '', shippingZoneId } = req.body;
+  const { transaction_id, tx_ref, shippingAddress, customerNote = '', shippingZoneId, deliveryLocation = null } = req.body;
 
   if (!transaction_id || !tx_ref) {
     return res.status(400).json({ error: 'transaction_id and tx_ref are required.' });
@@ -339,6 +340,7 @@ pricing.total = Math.max(
         quantity:  item.quantity,
       })),
       shippingAddress,
+      deliveryLocation,
       subtotal:   pricing.subtotal,
       shipping:   pricing.shipping,
       tax:        pricing.tax,

@@ -22,10 +22,17 @@ const SORT_OPTIONS = [
 ];
 
 const GENDER_SLUGS = ['men', 'women', 'unisex', 'kids'];
+const BADGES = [
+  { value: 'all', label: 'All' },
+  { value: 'new', label: 'New' },
+  { value: 'limited', label: 'Limited' },
+  { value: 'bestseller', label: 'Bestseller' },
+  { value: 'sale', label: 'Sale' },
+];
 
 export default function ShopPage() {
   const { category: routeCategory } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   // If the route param is a gender (men/women/unisex/kids), treat it as gender filter not category
@@ -44,6 +51,8 @@ export default function ShopPage() {
   const [sort,        setSort]        = useState('newest');
   const [page,        setPage]        = useState(1);
   const search = searchParams.get('search') || '';
+  const queryBadge = searchParams.get('badge') || 'all';
+  const [badge,       setBadge]       = useState(BADGES.some(b => b.value === queryBadge) ? queryBadge : 'all');
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -52,6 +61,7 @@ export default function ShopPage() {
         sort, page, limit: 12,
         ...(category !== 'all' && { category }),
         ...(gender   !== 'all' && { gender: gender.toLowerCase() }),
+        ...(badge    !== 'all' && { badge }),
         ...(maxPrice < priceCap && { maxPrice }),
         ...(search             && { search }),
       };
@@ -59,7 +69,7 @@ export default function ShopPage() {
       setProducts(res.data.products);
       setPagination(res.data.pagination);
     } finally { setLoading(false); }
-  }, [category, gender, maxPrice, priceCap, sort, page, search]);
+  }, [category, gender, badge, maxPrice, priceCap, sort, page, search]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
   useEffect(() => {
@@ -82,8 +92,20 @@ export default function ShopPage() {
       }
     }
   }, [routeCategory]);
+  useEffect(() => {
+    const nextBadge = BADGES.some(b => b.value === queryBadge) ? queryBadge : 'all';
+    setBadge(nextBadge);
+    setPage(1);
+  }, [queryBadge]);
 
-  const clearFilters = () => { setCategory('all'); setGender('all'); setMaxPrice(priceCap); setPage(1); };
+  const clearFilters = () => {
+    setCategory('all');
+    setGender('all');
+    setBadge('all');
+    setMaxPrice(priceCap);
+    setPage(1);
+    if (searchParams.get('badge')) setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   const Filters = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: isMobile ? '16px 20px 32px' : '24px 20px' }}>
@@ -93,6 +115,15 @@ export default function ShopPage() {
           <button key={cat.value} onClick={() => { setCategory(cat.value); setPage(1); if (isMobile) setFiltersOpen(false); }}
             style={{ ...s.filterBtn, fontWeight: category === cat.value ? 700 : 400, color: category === cat.value ? '#0a0a0a' : '#666' }}>
             {cat.label}
+          </button>
+        ))}
+      </div>
+      <div>
+        <h4 style={s.filterTitle}>TAGS</h4>
+        {BADGES.map(b => (
+          <button key={b.value} onClick={() => { setBadge(b.value); setPage(1); if (isMobile) setFiltersOpen(false); }}
+            style={{ ...s.filterBtn, fontWeight: badge === b.value ? 700 : 400, color: badge === b.value ? '#0a0a0a' : '#666' }}>
+            {b.label}
           </button>
         ))}
       </div>
@@ -121,7 +152,7 @@ export default function ShopPage() {
   return (
     <div style={{ background: '#f5f3ef', minHeight: '80vh' }}>
       <div style={s.header}>
-        <h1 style={s.h1}>{search ? `"${search}"` : category === 'all' ? 'SHOP ALL' : category.toUpperCase()}</h1>
+        <h1 style={s.h1}>{search ? `"${search}"` : badge !== 'all' ? badge.toUpperCase() : category === 'all' ? 'SHOP ALL' : category.toUpperCase()}</h1>
         <span style={s.count}>{pagination.total || 0} products</span>
       </div>
 

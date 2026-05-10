@@ -212,6 +212,12 @@ export default function AdminOrders() {
                           {order.shippingAddress?.city}, {order.shippingAddress?.state}<br />
                           {order.shippingAddress?.country} · {order.shippingAddress?.phone}
                         </p>
+                        {order.deliveryLocation?.mapsUrl && (
+                          <a href={order.deliveryLocation.mapsUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 8, fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#0a0a0a', textDecoration: 'underline' }}>
+                            OPEN LOCATION PIN
+                            {order.deliveryLocation.accuracy ? ` / ${Math.round(order.deliveryLocation.accuracy)}m` : ''}
+                          </a>
+                        )}
                         {order.customerNote && (
                           <div style={{ marginTop: 8, padding: 8, background: '#fff8e6', border: '1px solid #f0d060', fontFamily: 'Space Mono, monospace', fontSize: 9 }}>
                             <span style={{ color: '#888' }}>NOTE: </span>{order.customerNote}

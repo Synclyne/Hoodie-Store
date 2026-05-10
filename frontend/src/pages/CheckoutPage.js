@@ -42,6 +42,8 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [shippingZones, setShippingZones] = useState([]);
   const [zoneId, setZoneId] = useState('');
+  const [deliveryLocation, setDeliveryLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState('');
 
   useEffect(() => {
     fetchCart();
@@ -71,6 +73,9 @@ export default function CheckoutPage() {
         const savedNote = sessionStorage.getItem('hoodie_checkout_note') || '';
         const savedCoupon = sessionStorage.getItem('hoodie_checkout_coupon') || '';
         const savedZoneId = sessionStorage.getItem('hoodie_checkout_zone') || '';
+        const savedLocation = JSON.parse(
+          sessionStorage.getItem('hoodie_checkout_location') || 'null'
+        );
 
         if (!savedAddress) {
           setError('Session expired. Please restart checkout.');
@@ -85,12 +90,14 @@ export default function CheckoutPage() {
           customerNote: savedNote,
           couponCode: savedCoupon,
           shippingZoneId: savedZoneId || undefined,
+          deliveryLocation: savedLocation || undefined,
         });
 
         sessionStorage.removeItem('hoodie_checkout_address');
         sessionStorage.removeItem('hoodie_checkout_note');
         sessionStorage.removeItem('hoodie_checkout_coupon');
         sessionStorage.removeItem('hoodie_checkout_zone');
+        sessionStorage.removeItem('hoodie_checkout_location');
 
         await fetchCart();
 
@@ -174,6 +181,32 @@ export default function CheckoutPage() {
       [k]: e.target.value,
     }));
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('Your browser does not support location sharing.');
+      return;
+    }
+
+    setLocationStatus('Getting your location...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: Math.round(position.coords.accuracy || 0),
+          mapsUrl: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`,
+          capturedAt: new Date().toISOString(),
+        };
+        setDeliveryLocation(nextLocation);
+        setLocationStatus('Location pin added.');
+      },
+      () => {
+        setLocationStatus('Could not get location. You can continue with the address.');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  };
+
   const handleAddressNext = async (e) => {
     e.preventDefault();
 
@@ -189,6 +222,7 @@ export default function CheckoutPage() {
 
       const res = await api.post('/payments/initiate', {
         shippingAddress: address,
+        deliveryLocation: deliveryLocation || undefined,
         customerNote: note,
         couponCode: couponResult?.code || '',
         shippingZoneId: zoneId || undefined,
@@ -206,6 +240,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem('hoodie_checkout_note', note);
       sessionStorage.setItem('hoodie_checkout_coupon', couponResult?.code || '');
       sessionStorage.setItem('hoodie_checkout_zone', zoneId || '');
+      sessionStorage.setItem('hoodie_checkout_location', JSON.stringify(deliveryLocation || null));
 
       setStep(1);
 
@@ -233,6 +268,7 @@ export default function CheckoutPage() {
 
       const res = await api.post('/payments/initiate', {
         shippingAddress: address,
+        deliveryLocation: deliveryLocation || undefined,
         customerNote: note,
         couponCode: couponResult?.code || '',
         shippingZoneId: zoneId || undefined,
@@ -244,6 +280,7 @@ export default function CheckoutPage() {
         sessionStorage.removeItem('hoodie_checkout_note');
         sessionStorage.removeItem('hoodie_checkout_coupon');
         sessionStorage.removeItem('hoodie_checkout_zone');
+        sessionStorage.removeItem('hoodie_checkout_location');
 
         await fetchCart();
 
@@ -277,6 +314,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem('hoodie_checkout_note', note);
       sessionStorage.setItem('hoodie_checkout_coupon', couponResult?.code || '');
       sessionStorage.setItem('hoodie_checkout_zone', zoneId || '');
+      sessionStorage.setItem('hoodie_checkout_location', JSON.stringify(deliveryLocation || null));
 
       window.location.assign(paymentLink);
     } catch (err) {
@@ -816,6 +854,35 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  <div style={s.locationBox}>
+                    <div>
+                      <label style={s.label}>LOCATION PIN (OPTIONAL)</label>
+                      <p style={s.locationCopy}>
+                        Add your current GPS location to help the rider find you faster.
+                      </p>
+                    </div>
+
+                    {deliveryLocation ? (
+                      <div style={s.locationSaved}>
+                        <span>
+                          PIN ADDED / {deliveryLocation.lat.toFixed(5)}, {deliveryLocation.lng.toFixed(5)}
+                        </span>
+                        <a href={deliveryLocation.mapsUrl} target="_blank" rel="noreferrer" style={s.locationLink}>
+                          MAP
+                        </a>
+                        <button type="button" onClick={() => { setDeliveryLocation(null); setLocationStatus('Location pin removed.'); }} style={s.locationClear}>
+                          REMOVE
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={getCurrentLocation} style={s.secBtn}>
+                        USE CURRENT LOCATION
+                      </button>
+                    )}
+
+                    {locationStatus && <p style={s.locationStatus}>{locationStatus}</p>}
+                  </div>
+
                   <div>
                     <label style={s.label}>ORDER NOTE (OPTIONAL)</label>
 
@@ -877,6 +944,13 @@ export default function CheckoutPage() {
                   <br />
 
                   {address.phone}
+
+                  {deliveryLocation && (
+                    <>
+                      <br />
+                      Location pin added / accuracy {deliveryLocation.accuracy ? `${deliveryLocation.accuracy}m` : 'unknown'}
+                    </>
+                  )}
 
                   <button
                     type="button"
@@ -1192,6 +1266,52 @@ const s = {
     color: '#0a0a0a',
     border: '1px solid #d0cdc9',
     cursor: 'pointer',
+  },
+
+  locationBox: {
+    border: '1px solid #d0cdc9',
+    padding: '12px',
+    background: '#faf9f7',
+  },
+
+  locationCopy: {
+    fontFamily: 'Space Mono, monospace',
+    fontSize: 9,
+    color: '#888',
+    lineHeight: 1.6,
+    marginBottom: 10,
+  },
+
+  locationSaved: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    fontFamily: 'Space Mono, monospace',
+    fontSize: 9,
+    color: '#2a7a2a',
+  },
+
+  locationLink: {
+    color: '#0a0a0a',
+    textDecoration: 'underline',
+  },
+
+  locationClear: {
+    border: 'none',
+    background: 'transparent',
+    color: '#e03030',
+    cursor: 'pointer',
+    fontFamily: 'Space Mono, monospace',
+    fontSize: 9,
+    padding: 0,
+  },
+
+  locationStatus: {
+    fontFamily: 'Space Mono, monospace',
+    fontSize: 9,
+    color: '#888',
+    marginTop: 8,
   },
 
   error: {

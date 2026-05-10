@@ -63,7 +63,7 @@ export default function Navbar() {
             {CATEGORIES.map(cat => (
               <Link key={cat.value} to={`/shop/${cat.value}`} style={s.navLink}>{cat.label}</Link>
             ))}
-            <Link to="/shop" style={{ ...s.navLink, color: '#e03030', fontWeight: 700 }}>
+            <Link to="/shop?badge=new" style={{ ...s.navLink, color: '#e03030', fontWeight: 700 }}>
               NEW <span style={s.hotBadge}>HOT</span>
             </Link>
           </div>
@@ -141,7 +141,7 @@ export default function Navbar() {
                   {cat.label}
                 </Link>
               ))}
-              <Link to="/shop" style={{ ...s.drawerLink, color: '#e03030' }} onClick={() => setMobileNavOpen(false)}>
+              <Link to="/shop?badge=new" style={{ ...s.drawerLink, color: '#e03030' }} onClick={() => setMobileNavOpen(false)}>
                 New Arrivals 🔥
               </Link>
             </div>

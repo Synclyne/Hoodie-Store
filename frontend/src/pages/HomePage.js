@@ -207,6 +207,7 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
   const innerRef = scrollRef || React.useRef(null);
   const rafRef   = React.useRef(null);
   const hovered  = React.useRef(false);
+  const manualPauseRef = React.useRef(null);
   const carryRef = React.useRef(0);
   const CARD_W   = isMobile ? 180 : 281;
 
@@ -225,12 +226,18 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
     };
 
     rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (manualPauseRef.current) clearTimeout(manualPauseRef.current);
+    };
   }, [products, isMobile, innerRef]);
 
   const scrollBy = (dir) => {
     const el = innerRef.current;
     if (!el) return;
+    hovered.current = true;
+    if (manualPauseRef.current) clearTimeout(manualPauseRef.current);
+    manualPauseRef.current = setTimeout(() => { hovered.current = false; }, 1600);
     el.scrollTo({ left: el.scrollLeft + dir * CARD_W, behavior: 'smooth' });
   };
 
@@ -260,6 +267,7 @@ function ProductCarousel({ heading, shopAllLink, shopAllLabel, products, scrollR
           onTouchEnd={isMobile ? undefined : () => { hovered.current = false; }}
           onTouchCancel={isMobile ? undefined : () => { hovered.current = false; }}
           style={{ display: 'flex', overflowX: 'auto', gap: 1, background: '#d0cdc9', scrollBehavior: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'auto' }}
+          className="carousel-track"
         >
           <style>{`.carousel-track::-webkit-scrollbar{display:none}`}</style>
           {products.map((p, i) => (
