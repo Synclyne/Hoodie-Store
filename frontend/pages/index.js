@@ -25,13 +25,45 @@ const homeSeo = {
   },
 };
 
-export default function HomeRoute() {
+export default function HomeRoute({ homepageConfig, featuredProducts }) {
   return (
     <>
       <Seo {...homeSeo} />
       <RouteShell>
-        <HomePage />
+        <HomePage initialConfig={homepageConfig} initialFeatured={featuredProducts} />
       </RouteShell>
     </>
   );
+}
+
+export async function getServerSideProps() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.REACT_APP_API_URL;
+  if (!apiUrl) {
+    return { props: { homepageConfig: null, featuredProducts: [] } };
+  }
+
+  const base = apiUrl.replace(/\/$/, '');
+
+  try {
+    const [homepageRes, featuredRes] = await Promise.allSettled([
+      fetch(`${base}/homepage`),
+      fetch(`${base}/products/featured`),
+    ]);
+
+    const homepageData = homepageRes.status === 'fulfilled' && homepageRes.value.ok
+      ? await homepageRes.value.json()
+      : null;
+    const featuredData = featuredRes.status === 'fulfilled' && featuredRes.value.ok
+      ? await featuredRes.value.json()
+      : null;
+
+    return {
+      props: {
+        homepageConfig: homepageData?.config || null,
+        featuredProducts: featuredData?.products || [],
+      },
+    };
+  } catch {
+    return { props: { homepageConfig: null, featuredProducts: [] } };
+  }
 }

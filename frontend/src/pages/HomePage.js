@@ -457,7 +457,7 @@ function CustomSection({ sec, isMobile, navigate }) {
   return null;
 }
 
-export default function HomePage() {
+export default function HomePage({ initialConfig = null, initialFeatured = [] }) {
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { settings } = useSettings();
@@ -471,14 +471,15 @@ export default function HomePage() {
   const heroPausedRef = useRef(false);
   const heroResumeTimerRef = useRef(null);
 
-  const [cfg,     setCfg]     = useState(DEFAULT_CONFIG);
-  const [featured, setFeatured] = useState([]);
+  const [cfg,     setCfg]     = useState({ ...DEFAULT_CONFIG, ...(initialConfig || {}) });
+  const [featured, setFeatured] = useState(initialFeatured || []);
   const [email,   setEmail]   = useState('');
   const [subMsg,  setSubMsg]  = useState('');
   const [heroIndex, setHeroIndex] = useState(0);
-  const [loadingHome, setLoadingHome] = useState(true);
+  const [loadingHome, setLoadingHome] = useState(!initialConfig && !(initialFeatured || []).length);
 
   useEffect(() => {
+    if (initialConfig || (initialFeatured || []).length) return undefined;
     let alive = true;
 
     Promise.allSettled([
@@ -499,7 +500,7 @@ export default function HomePage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [initialConfig, initialFeatured]);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
