@@ -3,6 +3,17 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { protect } = require('../middleware/auth');
 
+const approvedReviews = (reviews = []) => reviews.filter(review => review.approved !== false);
+const shapePublicProduct = (product) => {
+  const obj = product.toObject ? product.toObject() : product;
+  obj.reviews = approvedReviews(obj.reviews || []);
+  obj.numReviews = obj.reviews.length;
+  obj.rating = obj.numReviews
+    ? obj.reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / obj.numReviews
+    : 0;
+  return obj;
+};
+
 // ─── GET /api/products ────────────────────────────
 router.get('/', async (req, res) => {
   const {
@@ -136,7 +147,7 @@ router.get('/:slug', async (req, res) => {
   const product = await Product.findOne({ slug: req.params.slug, isPublished: true })
     .populate('reviews.user', 'firstName lastName');
   if (!product) return res.status(404).json({ error: 'Product not found.' });
-  res.json({ product });
+  res.json({ product: shapePublicProduct(product) });
 });
 
 // ─── POST /api/products/:id/reviews ──────────────
@@ -161,12 +172,16 @@ router.post('/:id/reviews', protect, async (req, res) => {
     name: `${req.user.firstName} ${req.user.lastName}`,
     rating: Number(rating),
     comment,
+    approved: false,
   });
-  product.numReviews = product.reviews.length;
-  product.rating = product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.numReviews;
+  const visibleReviews = approvedReviews(product.reviews);
+  product.numReviews = visibleReviews.length;
+  product.rating = visibleReviews.length
+    ? visibleReviews.reduce((acc, r) => acc + r.rating, 0) / visibleReviews.length
+    : 0;
 
   await product.save();
-  res.status(201).json({ message: 'Review added.' });
+  res.status(201).json({ message: 'Review submitted for approval.' });
 });
 
 module.exports = router;

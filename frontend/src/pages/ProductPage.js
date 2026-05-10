@@ -144,9 +144,10 @@ export default function ProductPage({ initialProduct = null }) {
     e.preventDefault();
     if (!user) { navigate('/login'); return; }
     try {
-      await api.post(`/products/${product._id}/reviews`, review);
-      setReviewMsg('✓ Review submitted!');
-      setTimeout(() => setReviewMsg(''), 4000);
+      const res = await api.post(`/products/${product._id}/reviews`, review);
+      setReviewMsg(`Saved: ${res.data.message || 'Review submitted for approval.'}`);
+      setReview({ rating: 5, comment: '' });
+      setTimeout(() => setReviewMsg(''), 5000);
     } catch (err) { setReviewMsg(err.response?.data?.error || 'Failed.'); }
   };
 
@@ -335,7 +336,7 @@ export default function ProductPage({ initialProduct = null }) {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 32 : 40 }}>
           <div>
             <h3 style={{ fontFamily: 'Space Mono, monospace', fontSize: 11, marginBottom: 14 }}>WRITE A REVIEW</h3>
-            {reviewMsg && <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: reviewMsg.startsWith('✓') ? '#2a7a2a' : '#e03030', marginBottom: 12 }}>{reviewMsg}</p>}
+            {reviewMsg && <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 10, color: reviewMsg.startsWith('Saved:') ? '#2a7a2a' : '#e03030', marginBottom: 12 }}>{reviewMsg}</p>}
             <form onSubmit={handleReview} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={s.formLabel}>RATING</label>

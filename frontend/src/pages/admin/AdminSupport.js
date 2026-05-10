@@ -12,6 +12,8 @@ export default function AdminSupport() {
   const [status, setStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [updatingId, setUpdatingId] = useState('');
 
   const countMap = useMemo(() => Object.fromEntries((counts || []).map((row) => [row._id, row.count])), [counts]);
 
@@ -32,8 +34,24 @@ export default function AdminSupport() {
   useEffect(() => { load(status); }, [status]);
 
   const update = async (id, patch) => {
-    const res = await api.patch(`/support/admin/${id}`, patch);
-    setMessages((prev) => prev.map((m) => (m._id === id ? res.data.message : m)));
+    setUpdatingId(id);
+    setError('');
+    setNotice('');
+    try {
+      const res = await api.patch(`/support/admin/${id}`, patch);
+      setMessages((prev) => {
+        if (patch.status && status !== 'all' && patch.status !== status) {
+          return prev.filter((m) => m._id !== id);
+        }
+        return prev.map((m) => (m._id === id ? res.data.message : m));
+      });
+      setNotice(patch.status ? `Chat marked ${patch.status}.` : 'Support chat updated.');
+      load(status);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update support chat.');
+    } finally {
+      setUpdatingId('');
+    }
   };
 
   const reply = async (id, payload) => {
@@ -59,6 +77,7 @@ export default function AdminSupport() {
       </div>
 
       {error && <div style={s.errorBox}>{error}</div>}
+      {notice && <div style={s.successBox}>{notice}</div>}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
         {STATUSES.map((item) => (
@@ -79,7 +98,7 @@ export default function AdminSupport() {
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {messages.map((message) => (
-            <MessageCard key={message._id} message={message} onUpdate={update} onReply={reply} onDelete={remove} isMobile={isMobile} />
+            <MessageCard key={message._id} message={message} onUpdate={update} onReply={reply} onDelete={remove} isMobile={isMobile} updating={updatingId === message._id} />
           ))}
         </div>
       )}
@@ -87,7 +106,7 @@ export default function AdminSupport() {
   );
 }
 
-function MessageCard({ message, onUpdate, onReply, onDelete, isMobile }) {
+function MessageCard({ message, onUpdate, onReply, onDelete, isMobile, updating }) {
   const [note, setNote] = useState(message.adminNote || '');
   const [replyBody, setReplyBody] = useState('');
   const [emailCustomer, setEmailCustomer] = useState(true);
@@ -123,7 +142,7 @@ function MessageCard({ message, onUpdate, onReply, onDelete, isMobile }) {
           <p style={s.customer}>{message.name} / {message.email}{message.phone ? ` / ${message.phone}` : ''}</p>
           {message.orderNumber && <p style={s.customer}>Order: {message.orderNumber}</p>}
         </div>
-        <select value={message.status} onChange={(e) => onUpdate(message._id, { status: e.target.value })} style={s.select}>
+        <select value={message.status} disabled={updating} onChange={(e) => onUpdate(message._id, { status: e.target.value })} style={s.select}>
           <option value="new">New</option>
           <option value="open">Open</option>
           <option value="resolved">Resolved</option>
@@ -165,11 +184,11 @@ function MessageCard({ message, onUpdate, onReply, onDelete, isMobile }) {
       <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} style={s.note} />
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-        <button style={s.btn} disabled={sending} onClick={sendReply}>{sending ? 'SENDING...' : 'SEND REPLY'}</button>
-        <button style={s.btn} onClick={() => onUpdate(message._id, { adminNote: note })}>SAVE NOTE</button>
-        <button style={s.secBtn} onClick={() => onUpdate(message._id, { status: 'resolved' })}>RESOLVE</button>
-        <button style={s.secBtn} onClick={() => onUpdate(message._id, { status: 'closed' })}>CLOSE CHAT</button>
-        {message.status === 'closed' && <button style={s.secBtn} onClick={() => onUpdate(message._id, { status: 'open' })}>REOPEN</button>}
+        <button style={s.btn} disabled={sending || updating} onClick={sendReply}>{sending ? 'SENDING...' : 'SEND REPLY'}</button>
+        <button style={s.btn} disabled={updating} onClick={() => onUpdate(message._id, { adminNote: note })}>{updating ? 'SAVING...' : 'SAVE NOTE'}</button>
+        <button style={s.secBtn} disabled={updating} onClick={() => onUpdate(message._id, { status: 'resolved' })}>RESOLVE</button>
+        <button style={s.secBtn} disabled={updating} onClick={() => onUpdate(message._id, { status: 'closed' })}>CLOSE CHAT</button>
+        {message.status === 'closed' && <button style={s.secBtn} disabled={updating} onClick={() => onUpdate(message._id, { status: 'open' })}>REOPEN</button>}
         <button style={s.dangerBtn} onClick={() => onDelete(message._id)}>DELETE</button>
       </div>
     </article>

@@ -54,6 +54,7 @@ export default function AdminDashboard() {
 
   const NAV_LINKS = [
     { to: '/admin/products', label: 'PRODUCTS', permission: 'products' },
+    { to: '/admin/reviews',  label: 'REVIEWS', permission: 'products' },
     { to: '/admin/media',    label: 'MEDIA', permission: 'products' },
     { to: '/admin/orders',   label: 'ORDERS', permission: 'orders' },
     { to: '/admin/homepage', label: 'HOMEPAGE EDITOR', permission: 'homepage' },

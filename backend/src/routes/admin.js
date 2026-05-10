@@ -12,6 +12,15 @@ const { sendShippingNotification, sendDeliveryNotification } = require('../utils
 
 router.use(protect, adminOnly);
 
+const visibleReviews = (product) => (product.reviews || []).filter(review => review.approved !== false);
+const syncProductReviewStats = (product) => {
+  const approved = visibleReviews(product);
+  product.numReviews = approved.length;
+  product.rating = approved.length
+    ? approved.reduce((sum, review) => sum + Number(review.rating || 0), 0) / approved.length
+    : 0;
+};
+
 // ─── POST /api/admin/upload ───────────────────────────────
 // Works with Cloudinary (returns CDN URL) or local disk (returns /uploads/filename)
 router.post('/upload', requireAnyPermission(['products', 'homepage']), upload.array('images', 10), async (req, res) => {
@@ -117,6 +126,59 @@ router.delete('/products/:id', requirePermission('products'), async (req, res) =
 });
 
 // ─── ORDERS ───────────────────────────────────────
+
+// GET /api/admin/reviews — moderation queue
+router.get('/reviews', requirePermission('products'), async (req, res) => {
+  const { status = 'pending' } = req.query;
+  const products = await Product.find({ 'reviews.0': { $exists: true } })
+    .select('name slug reviews rating numReviews')
+    .populate('reviews.user', 'firstName lastName email')
+    .sort({ updatedAt: -1 });
+
+  const reviews = [];
+  products.forEach(product => {
+    product.reviews.forEach(review => {
+      const isApproved = review.approved !== false;
+      if (status === 'pending' && isApproved) return;
+      if (status === 'approved' && !isApproved) return;
+      reviews.push({
+        productId: product._id,
+        productName: product.name,
+        productSlug: product.slug,
+        review,
+      });
+    });
+  });
+
+  reviews.sort((a, b) => new Date(b.review.createdAt || 0) - new Date(a.review.createdAt || 0));
+  res.json({ reviews });
+});
+
+// PATCH /api/admin/products/:productId/reviews/:reviewId — approve/unapprove
+router.patch('/products/:productId/reviews/:reviewId', requirePermission('products'), async (req, res) => {
+  const product = await Product.findById(req.params.productId);
+  if (!product) return res.status(404).json({ error: 'Product not found.' });
+  const review = product.reviews.id(req.params.reviewId);
+  if (!review) return res.status(404).json({ error: 'Review not found.' });
+
+  if (req.body.approved !== undefined) review.approved = !!req.body.approved;
+  syncProductReviewStats(product);
+  await product.save();
+  res.json({ product, review });
+});
+
+// DELETE /api/admin/products/:productId/reviews/:reviewId
+router.delete('/products/:productId/reviews/:reviewId', requirePermission('products'), async (req, res) => {
+  const product = await Product.findById(req.params.productId);
+  if (!product) return res.status(404).json({ error: 'Product not found.' });
+  const review = product.reviews.id(req.params.reviewId);
+  if (!review) return res.status(404).json({ error: 'Review not found.' });
+
+  review.deleteOne();
+  syncProductReviewStats(product);
+  await product.save();
+  res.json({ message: 'Review removed.', product });
+});
 
 // GET /api/admin/orders
 router.get('/orders', requirePermission('orders'), async (req, res) => {
