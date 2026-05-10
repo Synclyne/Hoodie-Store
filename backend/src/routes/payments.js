@@ -232,8 +232,6 @@ pricing.total = Math.max(
   });
 }
 
-console.log('PRICING:', pricing);
-
   const response = await axios.post(
   'https://api.flutterwave.com/v3/payments',
   payload,

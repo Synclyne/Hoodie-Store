@@ -311,7 +311,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      console.log('FLUTTERWAVE INIT RESPONSE:', res.data);
 
       const paymentLink =
         res.data?.paymentLink ||
@@ -321,7 +320,6 @@ export default function CheckoutPage() {
         null;
 
       if (!paymentLink) {
-        console.log('❌ NO PAYMENT LINK FOUND:', res.data);
 
         setError('Failed to generate payment link.');
         setProcessing(false);
@@ -341,7 +339,6 @@ export default function CheckoutPage() {
 
       window.location.assign(paymentLink);
     } catch (err) {
-      console.error('PAYMENT INIT ERROR:', err);
 
       setError(
         err.response?.data?.error ||
