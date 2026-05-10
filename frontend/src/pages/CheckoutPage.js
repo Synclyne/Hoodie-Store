@@ -182,6 +182,23 @@ export default function CheckoutPage() {
       [k]: e.target.value,
     }));
 
+  const hasWrittenAddress = () => {
+    const requiredParts = [address.line1, address.city, address.state];
+    return requiredParts.every((part) => String(part || '').trim());
+  };
+
+  const validateDeliveryDetails = () => {
+    if (shippingZones.length > 0 && !zoneId) {
+      return 'Please select a delivery zone.';
+    }
+
+    if (!hasWrittenAddress() && !deliveryLocation) {
+      return 'Please enter a shipping address or add a delivery pin/map link.';
+    }
+
+    return '';
+  };
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus('Your browser does not support location sharing.');
@@ -237,8 +254,9 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
-      if (shippingZones.length > 0 && !zoneId) {
-        setError('Please select a delivery zone.');
+      const deliveryError = validateDeliveryDetails();
+      if (deliveryError) {
+        setError(deliveryError);
         setProcessing(false);
         return;
       }
@@ -283,8 +301,9 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
-      if (shippingZones.length > 0 && !zoneId) {
-        setError('Please select a delivery zone.');
+      const deliveryError = validateDeliveryDetails();
+      if (deliveryError) {
+        setError(deliveryError);
         setProcessing(false);
         return;
       }
@@ -699,7 +718,7 @@ export default function CheckoutPage() {
                     fontSize: 'clamp(22px,4vw,28px)',
                   }}
                 >
-                  SHIPPING ADDRESS
+                  DELIVERY DETAILS
                 </h2>
 
                 <div
@@ -724,10 +743,9 @@ export default function CheckoutPage() {
                   />
 
                   <Field
-                    label="ADDRESS LINE 1"
+                    label="ADDRESS LINE 1 (OR ADD A PIN BELOW)"
                     value={address.line1}
                     onChange={setAddr('line1')}
-                    required
                   />
 
                   <Field
@@ -744,17 +762,15 @@ export default function CheckoutPage() {
                     }}
                   >
                     <Field
-                      label="CITY"
+                      label="CITY (IF USING ADDRESS)"
                       value={address.city}
                       onChange={setAddr('city')}
-                      required
                     />
 
                     <Field
-                      label="STATE/COUNTY"
+                      label="STATE/COUNTY (IF USING ADDRESS)"
                       value={address.state}
                       onChange={setAddr('state')}
-                      required
                     />
                   </div>
 
@@ -766,10 +782,9 @@ export default function CheckoutPage() {
                     }}
                   >
                     <Field
-                      label="POSTAL CODE"
+                      label="POSTAL CODE (OPTIONAL)"
                       value={address.postalCode}
                       onChange={setAddr('postalCode')}
-                      required
                     />
 
                     <div>
@@ -878,7 +893,7 @@ export default function CheckoutPage() {
                     <div>
                       <label style={s.label}>LOCATION PIN (OPTIONAL)</label>
                       <p style={s.locationCopy}>
-                        Add your current GPS location or paste a Google Maps pin to help the rider find you faster.
+                        If you do not write a full address, add your current GPS location or paste a Google Maps pin.
                       </p>
                     </div>
 
