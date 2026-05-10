@@ -45,6 +45,7 @@ export default function AdminHomepage() {
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState('');
   const [active,  setActive]  = useState('hero'); // which section is being edited
+  const [productOptions, setProductOptions] = useState([]);
 
   useEffect(() => {
     api.get('/admin/homepage')
@@ -70,6 +71,12 @@ export default function AdminHomepage() {
       })
       .catch(() => setError('Failed to load config.'))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.get('/products', { params: { limit: 200, sort: 'newest' } })
+      .then(r => setProductOptions(r.data.products || []))
+      .catch(() => {});
   }, []);
 
   // Deep-path setter: set('banner.heading')('value')
@@ -578,6 +585,7 @@ export default function AdminHomepage() {
             <CustomSectionEditor
               key={sec.id}
               sec={sec}
+              productOptions={productOptions}
               onChange={(field, val) => updateCustomSection(sec.id, field, val)}
               onDelete={() => deleteCustomSection(sec.id)}
             />
@@ -597,7 +605,7 @@ export default function AdminHomepage() {
 }
 
 // ─── Custom section editor ────────────────────────────────
-function CustomSectionEditor({ sec, onChange, onDelete }) {
+function CustomSectionEditor({ sec, productOptions = [], onChange, onDelete }) {
   const typeLabel = CUSTOM_SECTION_TYPES.find(t => t.value === sec.type)?.label || sec.type;
   return (
     <Card
@@ -632,17 +640,11 @@ function CustomSectionEditor({ sec, onChange, onDelete }) {
                 ))}
               </select>
             </div>
-            <div>
-              <label style={s.label}>OPTION 2: SPECIFIC PRODUCT SLUGS (one per line, e.g. vintage-wash-oversized-hoodie)</label>
-              <textarea
-                value={(sec.productIds || []).join('\n')}
-                onChange={e => { onChange('productIds', e.target.value.split('\n').map(s => s.trim()).filter(Boolean)); onChange('carouselCategory', ''); }}
-                rows={4}
-                style={{ ...s.input, resize: 'vertical', fontFamily: 'Space Mono, monospace', fontSize: 10 }}
-                placeholder={'vintage-wash-oversized-hoodie\ngraphic-print-hoodie\nclassic-crewneck-sweatshirt'}
-              />
-              <p style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: '#888', marginTop: 4 }}>Find slugs in Products → Edit product → the URL field.</p>
-            </div>
+            <ProductSelectionField
+              products={productOptions}
+              selectedRefs={sec.productIds || []}
+              onChange={(refs) => { onChange('productIds', refs); onChange('carouselCategory', ''); }}
+            />
           </div>
         </>
       )}
@@ -811,6 +813,84 @@ function ImageField({ label, value, onChange, onError }) {
         </div>
       )}
       {pickerOpen && <MediaPicker onSelect={onChange} onClose={() => setPickerOpen(false)} />}
+    </div>
+  );
+}
+
+function ProductSelectionField({ products, selectedRefs, onChange }) {
+  const [nextProductId, setNextProductId] = useState('');
+  const selected = selectedRefs || [];
+  const selectedSet = new Set(selected.map(String));
+  const availableProducts = products.filter(p => !selectedSet.has(String(p._id)) && !selectedSet.has(String(p.slug)));
+
+  const addSelected = () => {
+    if (!nextProductId) return;
+    onChange([...selected, nextProductId]);
+    setNextProductId('');
+  };
+
+  const removeSelected = (ref) => {
+    onChange(selected.filter(item => String(item) !== String(ref)));
+  };
+
+  const moveSelected = (index, dir) => {
+    const next = [...selected];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  const labelForRef = (ref) => {
+    const product = products.find(p => String(p._id) === String(ref) || String(p.slug) === String(ref));
+    return product ? `${product.name} / ${product.category} / KSh ${Number(product.price || 0).toLocaleString()}` : `${ref} / legacy slug`;
+  };
+
+  return (
+    <div>
+      <label style={s.label}>OPTION 2: SPECIFIC PRODUCTS</label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <select
+          value={nextProductId}
+          onChange={e => setNextProductId(e.target.value)}
+          style={{ ...s.input, flex: 1 }}
+        >
+          <option value="">Choose an existing product...</option>
+          {availableProducts.map(product => (
+            <option key={product._id} value={product._id}>
+              {product.name} / {product.category} / KSh {Number(product.price || 0).toLocaleString()}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={addSelected} style={s.secBtn}>ADD</button>
+      </div>
+
+      {selected.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+          {selected.map((ref, i) => (
+            <div key={`${ref}-${i}`} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto auto', gap: 6, alignItems: 'center', border: '1px solid #d0cdc9', padding: '7px 8px', background: '#f5f3ef' }}>
+              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: '#888' }}>{String(i + 1).padStart(2, '0')}</span>
+              <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 9, lineHeight: 1.4 }}>{labelForRef(ref)}</span>
+              <button type="button" onClick={() => moveSelected(i, -1)} disabled={i === 0} style={s.arrowBtn} title="Move up">↑</button>
+              <button type="button" onClick={() => moveSelected(i, 1)} disabled={i === selected.length - 1} style={s.arrowBtn} title="Move down">↓</button>
+              <button type="button" onClick={() => removeSelected(ref)} style={{ ...s.arrowBtn, color: '#e03030' }} title="Remove">x</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <details style={{ marginTop: 10 }}>
+        <summary style={{ fontFamily: 'Space Mono, monospace', fontSize: 8, color: '#888', cursor: 'pointer' }}>
+          Manual refs / old slugs
+        </summary>
+        <textarea
+          value={selected.join('\n')}
+          onChange={e => onChange(e.target.value.split('\n').map(item => item.trim()).filter(Boolean))}
+          rows={3}
+          style={{ ...s.input, resize: 'vertical', fontFamily: 'Space Mono, monospace', fontSize: 10, marginTop: 6 }}
+          placeholder={'product-id-or-old-slug\nanother-product-id'}
+        />
+      </details>
     </div>
   );
 }

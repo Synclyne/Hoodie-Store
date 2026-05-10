@@ -371,10 +371,12 @@ function LaunchCarousel({ sec, isMobile }) {
   React.useEffect(() => {
     if (!sec.visible) return;
     if (sec.productIds?.length) {
-      // Fetch specific products by ID
-      Promise.all(sec.productIds.map(slug =>
-        api.get(`/products/${slug}`).then(r => r.data.product).catch(() => null)
-      )).then(results => {
+      // Fetch specific products by ID, with slug fallback for older saved homepage configs.
+      Promise.all(sec.productIds.map(productRef => {
+        const ref = String(productRef || '').trim();
+        const endpoint = /^[a-f\d]{24}$/i.test(ref) ? `/products/id/${ref}` : `/products/${ref}`;
+        return api.get(endpoint).then(r => r.data.product).catch(() => null);
+      })).then(results => {
         const valid = results.filter(Boolean);
         setProducts([...valid, ...valid]);
       });
