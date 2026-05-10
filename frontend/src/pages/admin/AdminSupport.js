@@ -107,12 +107,18 @@ export default function AdminSupport() {
 }
 
 function MessageCard({ message, onUpdate, onReply, onDelete, isMobile, updating }) {
+  const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState(message.adminNote || '');
   const [replyBody, setReplyBody] = useState('');
   const [emailCustomer, setEmailCustomer] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyNotice, setReplyNotice] = useState('');
   const created = new Date(message.createdAt).toLocaleString();
+  const thread = message.thread?.length
+    ? message.thread
+    : [{ author: 'customer', body: message.message, createdAt: message.createdAt }];
+  const latest = thread[thread.length - 1];
+  const latestAuthor = latest?.author === 'admin' ? 'Support' : 'Customer';
 
   const sendReply = async () => {
     if (!replyBody.trim()) return;
@@ -134,24 +140,39 @@ function MessageCard({ message, onUpdate, onReply, onDelete, isMobile, updating 
   };
 
   return (
-    <article style={s.card}>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: 12 }}>
+    <article style={{ ...s.card, padding: expanded ? 16 : 0 }}>
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+        style={{ ...s.cardSummary, gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) auto' }}
+      >
         <div>
           <p style={s.meta}>{created} / {message.status.toUpperCase()}</p>
           <h2 style={s.subject}>{message.subject}</h2>
           <p style={s.customer}>{message.name} / {message.email}{message.phone ? ` / ${message.phone}` : ''}</p>
           {message.orderNumber && <p style={s.customer}>Order: {message.orderNumber}</p>}
+          <p style={s.preview}>{latestAuthor}: {latest?.body || message.message}</p>
         </div>
-        <select value={message.status} disabled={updating} onChange={(e) => onUpdate(message._id, { status: e.target.value })} style={s.select}>
+        <div style={s.summaryMeta}>
+          <span style={s.threadCount}>{thread.length} MESSAGE{thread.length === 1 ? '' : 'S'}</span>
+          <span style={s.expandBtn}>{expanded ? 'COLLAPSE' : 'OPEN'}</span>
+        </div>
+      </button>
+
+      {expanded && (
+        <>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+          <select value={message.status} disabled={updating} onChange={(e) => onUpdate(message._id, { status: e.target.value })} style={s.select}>
           <option value="new">New</option>
           <option value="open">Open</option>
           <option value="resolved">Resolved</option>
           <option value="closed">Closed</option>
-        </select>
-      </div>
+          </select>
+        </div>
 
       <div style={s.thread}>
-        {(message.thread?.length ? message.thread : [{ author: 'customer', body: message.message, createdAt: message.createdAt }]).map((item) => (
+        {thread.map((item) => (
           <div
             key={item._id || `${item.author}-${item.createdAt}`}
             style={{
@@ -191,15 +212,22 @@ function MessageCard({ message, onUpdate, onReply, onDelete, isMobile, updating 
         {message.status === 'closed' && <button style={s.secBtn} disabled={updating} onClick={() => onUpdate(message._id, { status: 'open' })}>REOPEN</button>}
         <button style={s.dangerBtn} onClick={() => onDelete(message._id)}>DELETE</button>
       </div>
+        </>
+      )}
     </article>
   );
 }
 
 const s = {
   card: { border: '1px solid #d0cdc9', padding: 16, background: '#f5f3ef' },
+  cardSummary: { width: '100%', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 12, alignItems: 'center', textAlign: 'left', border: 0, background: 'transparent', padding: 16, cursor: 'pointer' },
+  summaryMeta: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' },
+  threadCount: { fontFamily: 'Space Mono, monospace', fontSize: 8, letterSpacing: 1.2, color: '#777', whiteSpace: 'nowrap' },
+  expandBtn: { fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: 1, border: '1px solid #0a0a0a', padding: '8px 10px', color: '#0a0a0a', whiteSpace: 'nowrap' },
   meta: { fontFamily: 'Space Mono, monospace', fontSize: 9, letterSpacing: 1.5, color: '#888', marginBottom: 5 },
   subject: { fontFamily: 'Anton, sans-serif', fontSize: 28, lineHeight: 1, marginBottom: 8 },
   customer: { fontFamily: 'Space Mono, monospace', fontSize: 10, color: '#666', lineHeight: 1.7 },
+  preview: { maxWidth: 760, marginTop: 8, fontSize: 12, lineHeight: 1.5, color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   thread: { display: 'flex', flexDirection: 'column', gap: 7, border: '1px solid #d0cdc9', padding: 12, margin: '14px 0', maxHeight: 430, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', background: '#ede9e3' },
   bubble: { width: 'fit-content', maxWidth: 'min(78%, 620px)', padding: '8px 10px', border: '1px solid rgba(10,10,10,.08)', borderRadius: 8, boxShadow: '0 1px 1px rgba(10,10,10,.05)' },
   bubbleMeta: { fontFamily: 'Space Mono, monospace', fontSize: 7, letterSpacing: .8, opacity: .58, marginTop: 5 },
