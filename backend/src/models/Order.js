@@ -27,6 +27,7 @@ const deliveryLocationSnapshot = new mongoose.Schema({
   lng:      Number,
   accuracy: Number,
   mapsUrl:  String,
+  source:   { type: String, enum: ['browser', 'manual'], default: 'browser' },
   capturedAt: Date,
 }, { _id: false });
 

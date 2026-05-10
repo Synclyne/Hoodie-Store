@@ -215,6 +215,7 @@ export default function AdminOrders() {
                         {order.deliveryLocation?.mapsUrl && (
                           <a href={order.deliveryLocation.mapsUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 8, fontFamily: 'Space Mono, monospace', fontSize: 9, color: '#0a0a0a', textDecoration: 'underline' }}>
                             OPEN LOCATION PIN
+                            {order.deliveryLocation.source === 'manual' ? ' / MANUAL LINK' : ''}
                             {order.deliveryLocation.accuracy ? ` / ${Math.round(order.deliveryLocation.accuracy)}m` : ''}
                           </a>
                         )}

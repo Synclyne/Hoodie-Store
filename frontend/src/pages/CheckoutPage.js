@@ -43,6 +43,7 @@ export default function CheckoutPage() {
   const [shippingZones, setShippingZones] = useState([]);
   const [zoneId, setZoneId] = useState('');
   const [deliveryLocation, setDeliveryLocation] = useState(null);
+  const [manualLocationUrl, setManualLocationUrl] = useState('');
   const [locationStatus, setLocationStatus] = useState('');
 
   useEffect(() => {
@@ -195,9 +196,11 @@ export default function CheckoutPage() {
           lng: position.coords.longitude,
           accuracy: Math.round(position.coords.accuracy || 0),
           mapsUrl: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`,
+          source: 'browser',
           capturedAt: new Date().toISOString(),
         };
         setDeliveryLocation(nextLocation);
+        setManualLocationUrl('');
         setLocationStatus('Location pin added.');
       },
       () => {
@@ -205,6 +208,26 @@ export default function CheckoutPage() {
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
+  };
+
+  const addManualLocation = () => {
+    const url = manualLocationUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      setLocationStatus('Paste the full Google Maps link starting with https://');
+      return;
+    }
+    if (!/google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i.test(url)) {
+      setLocationStatus('That does not look like a Google Maps link.');
+      return;
+    }
+
+    setDeliveryLocation({
+      mapsUrl: url,
+      source: 'manual',
+      capturedAt: new Date().toISOString(),
+    });
+    setLocationStatus('Manual map link added.');
   };
 
   const handleAddressNext = async (e) => {
@@ -858,26 +881,42 @@ export default function CheckoutPage() {
                     <div>
                       <label style={s.label}>LOCATION PIN (OPTIONAL)</label>
                       <p style={s.locationCopy}>
-                        Add your current GPS location to help the rider find you faster.
+                        Add your current GPS location or paste a Google Maps pin to help the rider find you faster.
                       </p>
                     </div>
 
                     {deliveryLocation ? (
                       <div style={s.locationSaved}>
                         <span>
-                          PIN ADDED / {deliveryLocation.lat.toFixed(5)}, {deliveryLocation.lng.toFixed(5)}
+                          PIN ADDED
+                          {deliveryLocation.lat && deliveryLocation.lng
+                            ? ` / ${deliveryLocation.lat.toFixed(5)}, ${deliveryLocation.lng.toFixed(5)}`
+                            : ' / MAP LINK'}
                         </span>
                         <a href={deliveryLocation.mapsUrl} target="_blank" rel="noreferrer" style={s.locationLink}>
                           MAP
                         </a>
-                        <button type="button" onClick={() => { setDeliveryLocation(null); setLocationStatus('Location pin removed.'); }} style={s.locationClear}>
+                        <button type="button" onClick={() => { setDeliveryLocation(null); setManualLocationUrl(''); setLocationStatus('Location pin removed.'); }} style={s.locationClear}>
                           REMOVE
                         </button>
                       </div>
                     ) : (
-                      <button type="button" onClick={getCurrentLocation} style={s.secBtn}>
-                        USE CURRENT LOCATION
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <button type="button" onClick={getCurrentLocation} style={s.secBtn}>
+                          USE CURRENT LOCATION
+                        </button>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'wrap' }}>
+                          <input
+                            value={manualLocationUrl}
+                            onChange={(e) => setManualLocationUrl(e.target.value)}
+                            placeholder="Paste Google Maps link..."
+                            style={{ ...s.input, flex: '1 1 220px' }}
+                          />
+                          <button type="button" onClick={addManualLocation} style={s.secBtn}>
+                            ADD MAP LINK
+                          </button>
+                        </div>
+                      </div>
                     )}
 
                     {locationStatus && <p style={s.locationStatus}>{locationStatus}</p>}
@@ -948,7 +987,10 @@ export default function CheckoutPage() {
                   {deliveryLocation && (
                     <>
                       <br />
-                      Location pin added / accuracy {deliveryLocation.accuracy ? `${deliveryLocation.accuracy}m` : 'unknown'}
+                      Location pin added
+                      {deliveryLocation.source === 'manual'
+                        ? ' / map link'
+                        : ` / accuracy ${deliveryLocation.accuracy ? `${deliveryLocation.accuracy}m` : 'unknown'}`}
                     </>
                   )}
 
